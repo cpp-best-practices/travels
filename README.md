@@ -1,52 +1,16 @@
-# ftxui_template
+# my_awesome_game
 
-[![ci](https://github.com/cpp-best-practices/ftxui_template/actions/workflows/ci.yml/badge.svg)](https://github.com/cpp-best-practices/ftxui_template/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/cpp-best-practices/ftxui_template/branch/main/graph/badge.svg)](https://codecov.io/gh/cpp-best-practices/ftxui_template)
-[![Language grade: C++](https://img.shields.io/lgtm/grade/cpp/github/cpp-best-practices/ftxui_template)](https://lgtm.com/projects/g/cpp-best-practices/ftxui_template/context:cpp)
-[![CodeQL](https://github.com/cpp-best-practices/ftxui_template/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/cpp-best-practices/ftxui_template/actions/workflows/codeql-analysis.yml)
+[![ci](https://github.com/lefticus/my_awesome_game/actions/workflows/ci.yml/badge.svg)](https://github.com/lefticus/my_awesome_game/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/lefticus/my_awesome_game/branch/main/graph/badge.svg)](https://codecov.io/gh/lefticus/my_awesome_game)
+[![CodeQL](https://github.com/lefticus/my_awesome_game/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/lefticus/my_awesome_game/actions/workflows/codeql-analysis.yml)
 
-## About ftxui_template
+LGTM Has to be set up manually after template is created:
 
-This is a C++ Best Practices GitHub template for getting up and running with C++ quickly.
+[![Language grade: C++](https://img.shields.io/lgtm/grade/cpp/github/lefticus/my_awesome_game)](https://lgtm.com/projects/g/lefticus/my_awesome_game/context:cpp)
 
-By default (collectively known as `ENABLE_DEVELOPER_MODE`)
+## About my_awesome_game
+This is an awesome submission to the C++ Best Practices Game Jam
 
- * Address Sanitizer and Undefined Behavior Sanitizer enabled where possible
- * Warnings as errors
- * clang-tidy and cppcheck static analysis
- * conan for dependencies
-
-It includes
-
- * a basic CLI example
- * examples for fuzz, unit, and constexpr testing
- * large github action testing matrix
-
-It requires
-
- * cmake
- * conan
- * a compiler
-
-
-This project gets you started with a simple example of using FTXUI, which happens to also be a game.
-
-
-## Getting Started
-
-### Use the Github template
-First, click the green `Use this template` button near the top of this page.
-This will take you to Github's ['Generate Repository'](https://github.com/cpp-best-practices/ftxui_template/generate) page.
-Fill in a repository name and short description, and click 'Create repository from template'.
-This will allow you to create a new repository in your Github account,
-prepopulated with the contents of this project.
-
-After creating the project please wait until the cleanup workflow has finished 
-setting up your project and commited the changes.
-
-Now you can clone the project locally and get to work!
-
-    git clone https://github.com/<user>/<your_new_repo>.git
 
 ## More Details
 
@@ -54,13 +18,3 @@ Now you can clone the project locally and get to work!
  * [Building Details](README_building.md)
  * [Troubleshooting](README_troubleshooting.md)
  * [Docker](README_docker.md)
-
-## Testing
-
-See [Catch2 tutorial](https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md)
-
-## Fuzz testing
-
-See [libFuzzer Tutorial](https://github.com/google/fuzzing/blob/master/tutorial/libFuzzerTutorial.md)
-
-

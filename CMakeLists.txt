@@ -49,10 +49,10 @@ include(${_project_options_SOURCE_DIR}/Index.cmake)
 
 # Set the project name and language
 project(
-  myproject
+  my_awesome_game
   VERSION 0.0.1
   DESCRIPTION ""
-  HOMEPAGE_URL "%%myurl%%"
+  HOMEPAGE_URL "https://github.com/lefticus/my_awesome_game"
   LANGUAGES CXX C)
 
 set(GIT_SHA
