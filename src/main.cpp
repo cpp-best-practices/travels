@@ -163,16 +163,14 @@ Game_Map make_map()
         if (x == 0 || y == 0 || x == pixels.size().width - 1 || y == pixels.size().height - 1) {
           pixels.at(Point{ x, y }) = Color{ 128, 128, 128 };// NOLINT Magic numbers
         } else {
-          switch ((game_clock.count() / 1000) % 2) { // NOLINT Magic numbers
-            case 0:
-              pixels.at(Point{ x, y }) = Color{ 255, 255, 255 };// NOLINT Magic numbers
-              break;
-            case 1: // NOLINT Magic Numbers
-              pixels.at(Point{ x, y }) = Color{ 200, 240, 240 };// NOLINT Magic numbers
-              break;
+          switch ((game_clock.count() / 1000) % 2) {// NOLINT Magic numbers
+          case 0:
+            pixels.at(Point{ x, y }) = Color{ 255, 255, 255 };// NOLINT Magic numbers
+            break;
+          case 1:// NOLINT Magic Numbers
+            pixels.at(Point{ x, y }) = Color{ 200, 240, 240 };// NOLINT Magic numbers
+            break;
           }
-
-
         }
       }
     }
