@@ -22,62 +22,220 @@ struct Color
   std::uint8_t B{};
 };
 
+struct Size
+{
+  std::size_t width;
+  std::size_t height;
+};
+
+struct Point
+{
+  std::size_t x;
+  std::size_t y;
+
+  [[nodiscard]] friend constexpr auto operator+(Point lhs, Point rhs) noexcept
+  {
+    return Point{ lhs.x + rhs.x, lhs.y + rhs.y };
+  }
+
+  [[nodiscard]] friend constexpr auto operator-(Point lhs, Point rhs) noexcept
+  {
+    return Point{ lhs.x - rhs.x, lhs.y - rhs.y };
+  }
+};
+
+
+template<typename Contained> class Vector2D
+{
+  Size size_;
+  std::vector<Contained> data_ = decltype(data_)(size_.width * size_.height, Contained{});
+
+
+  void validate_position(const Point p) const
+  {
+    if (p.x >= size_.width || p.y >= size_.height) { throw std::range_error("index out of range"); }
+  }
+
+
+public:
+  explicit Vector2D(const Size size) : size_(size) {}
+
+  [[nodiscard]] auto size() const noexcept { return size_; }
+
+  [[nodiscard]] Contained &at(const Point p)
+  {
+    validate_position(p);
+    return data_.at(p.y * size_.width + p.x);
+  }
+
+  [[nodiscard]] const Contained &at(const Point p) const
+  {
+    validate_position(p);
+    return data_.at(p.y * size_.width + p.x);
+  }
+};
+
+template<typename Contained> class Vector2D_Span
+{
+  Point origin_;
+  Size size_;
+
+  std::reference_wrapper<Vector2D<Contained>> data_;
+
+public:
+  Vector2D_Span(const Point origin, const Size size, Vector2D<Contained> &data)
+    : origin_{ origin }, size_{ size }, data_{ data }
+  {}
+
+  [[nodiscard]] Size size() const noexcept { return size_; }
+
+  void validate_position(const Point p) const
+  {
+    if (p.x >= size_.width || p.y >= size_.height) { throw std::range_error("index out of range"); }
+  }
+
+
+  [[nodiscard]] const Contained &at(const Point p) const
+  {
+    validate_position(p);
+    return data_.get().at(p + origin_);
+  }
+
+  [[nodiscard]] Contained &at(const Point p)
+  {
+    validate_position(p);
+    return data_.get().at(p + origin_);
+  }
+};
+
 // A simple way of representing a bitmap on screen using only characters
 struct Bitmap : ftxui::Node
 {
-  Bitmap(std::size_t width, std::size_t height)// NOLINT same typed parameters adjacent to each other
-    : width_(width), height_(height)
-  {}
-
-  Color &at(std::size_t x, std::size_t y) { return pixels.at(width_ * y + x); }
+  explicit Bitmap(const Size s) : pixels(s) {}
 
   void ComputeRequirement() override
   {
-    requirement_ = ftxui::Requirement{
-      .min_x = static_cast<int>(width_), .min_y = static_cast<int>(height_ / 2), .selected_box{ 0, 0, 0, 0 }
-    };
+    requirement_ = ftxui::Requirement{ .min_x = static_cast<int>(pixels.size().width),
+      .min_y = static_cast<int>(pixels.size().height / 2),
+      .selected_box{ 0, 0, 0, 0 } };
   }
-
-  void SetBox(ftxui::Box box) override { box_ = box; }
 
   void Render(ftxui::Screen &screen) override
   {
-    for (std::size_t x = 0; x < width_; ++x) {
-      for (std::size_t y = 0; y < height_ / 2; ++y) {
+    for (std::size_t x = 0; x < pixels.size().width; ++x) {
+      for (std::size_t y = 0; y < pixels.size().height / 2; ++y) {
         auto &p = screen.PixelAt(box_.x_min + static_cast<int>(x), box_.y_min + static_cast<int>(y));
         p.character = "▄";
-        const auto &top_color = at(x, y * 2);
-        const auto &bottom_color = at(x, y * 2 + 1);
+        const auto &top_color = pixels.at(Point{ x, y * 2 });
+        const auto &bottom_color = pixels.at(Point{ x, y * 2 + 1 });
         p.background_color = ftxui::Color{ top_color.R, top_color.G, top_color.B };
         p.foreground_color = ftxui::Color{ bottom_color.R, bottom_color.G, bottom_color.B };
       }
     }
   }
 
-  [[nodiscard]] auto width() const noexcept { return width_; }
-
-  [[nodiscard]] auto height() const noexcept { return height_; }
-
-  [[nodiscard]] auto &data() noexcept { return pixels; }
-
-private:
-  std::size_t width_;
-  std::size_t height_;
-
-  std::vector<Color> pixels = std::vector<Color>(width_ * height_, Color{});
+  Vector2D<Color> pixels;
 };
+
+struct Location
+{
+  std::function<void()> action;
+  std::function<void(Vector2D_Span<Color> &, std::chrono::milliseconds, Point)> draw;
+};
+
+
+struct Game_Map
+{
+  explicit Game_Map(const Size size) : locations{ size } {}
+  Vector2D<Location> locations;
+};
+
+
+Game_Map make_map()
+{
+  Game_Map map{ Size{ 5, 5 } };// NOLINT magic numbers
+
+  auto solid_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
+                      [[maybe_unused]] std::chrono::milliseconds game_clock,
+                      [[maybe_unused]] Point map_location) {
+    for (std::size_t x = 0; x < pixels.size().width; ++x) {
+      for (std::size_t y = 0; y < pixels.size().height; ++y) {
+        if (x == 0 || y == 0 || x == pixels.size().width - 1 || y == pixels.size().height - 1) {
+          pixels.at(Point{ x, y }) = Color{ 128, 128, 128 };// NOLINT Magic numbers
+        } else {
+          switch ((game_clock.count() / 1000) % 2) { // NOLINT Magic numbers
+            case 0:
+              pixels.at(Point{ x, y }) = Color{ 255, 255, 255 };// NOLINT Magic numbers
+              break;
+            case 1: // NOLINT Magic Numbers
+              pixels.at(Point{ x, y }) = Color{ 200, 240, 240 };// NOLINT Magic numbers
+              break;
+          }
+
+
+        }
+      }
+    }
+  };
+
+  auto empty_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
+                      [[maybe_unused]] std::chrono::milliseconds game_clock,
+                      [[maybe_unused]] Point map_location) {
+
+  };
+
+  for (std::size_t x = 0; x < map.locations.size().width; ++x) {
+    for (std::size_t y = 0; y < map.locations.size().height; ++y) { map.locations.at(Point{ x, y }).draw = empty_draw; }
+  }
+
+  map.locations.at(Point{ 2, 3 }).draw = solid_draw;
+  map.locations.at(Point{ 1, 4 }).draw = solid_draw;
+  map.locations.at(Point{ 0, 2 }).draw = solid_draw;
+
+
+  return map;
+}
+
+void draw(Bitmap &viewport, Size tile_size, Point map_center, std::chrono::milliseconds time, const Game_Map &map)
+{
+  const auto num_wide = viewport.pixels.size().width / tile_size.width;
+  const auto num_high = viewport.pixels.size().width / tile_size.height;
+
+  const auto x_offset = num_wide / 2;
+  const auto y_offset = num_high / 2;
+
+  const auto min_x = x_offset;
+  const auto min_y = y_offset;
+
+  const auto max_x = num_wide - x_offset;
+  const auto max_y = num_high - y_offset;
+
+  const auto center_map_location =
+    Point{ std::clamp(map_center.x, min_x, max_x), std::clamp(map_center.y, min_y, max_y) };
+
+  const auto upper_left_map_location = center_map_location - Point{ min_x, min_y };
+
+  for (std::size_t x = 0; x < num_wide; ++x) {
+    for (std::size_t y = 0; y < num_high; ++y) {
+      auto span = Vector2D_Span<Color>(Point{ x * tile_size.width, y * tile_size.width }, tile_size, viewport.pixels);
+      const auto map_location = Point{ x, y } + upper_left_map_location;
+      map.locations.at(map_location).draw(span, time, map_location);
+    }
+  }
+}
 
 void game_iteration_canvas()
 {
+  const auto map = make_map();
+
   // this should probably have a `bitmap` helper function that does what you expect
   // similar to the other parts of FTXUI
-  auto bm = std::make_shared<Bitmap>(50, 50);// NOLINT magic numbers
-  auto small_bm = std::make_shared<Bitmap>(6, 6);// NOLINT magic numbers
+  auto bm = std::make_shared<Bitmap>(Size{ 40, 40 });// NOLINT magic numbers
+  auto small_bm = std::make_shared<Bitmap>(Size{ 6, 6 });// NOLINT magic numbers
 
   double fps = 0;
+  auto start_time = std::chrono::steady_clock::now();
 
-  std::size_t max_row = 0;
-  std::size_t max_col = 0;
 
   // to do, add total game time clock also, not just current elapsed time
   auto game_iteration = [&](const std::chrono::steady_clock::duration elapsed_time) {
@@ -89,35 +247,13 @@ void game_iteration_canvas()
           / (static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count())
              / 1'000'000.0);// NOLINT magic numbers
 
-    for (std::size_t row = 0; row < max_row; ++row) {
-      for (std::size_t col = 0; col < bm->width(); ++col) { ++(bm->at(col, row).R); }
-    }
+    const auto game_clock = std::chrono::steady_clock::now() - start_time;
 
-    for (std::size_t row = 0; row < bm->height(); ++row) {
-      for (std::size_t col = 0; col < max_col; ++col) { ++(bm->at(col, row).G); }
-    }
-
-    // for the fun of it, let's have a second window doing interesting things
-    auto &small_bm_pixel =
-      small_bm->data().at(static_cast<std::size_t>(elapsed_time.count()) % small_bm->data().size());
-
-    switch (elapsed_time.count() % 3) {
-    case 0:
-      small_bm_pixel.R += 11;// NOLINT Magic Number
-      break;
-    case 1:
-      small_bm_pixel.G += 11;// NOLINT Magic Number
-      break;
-    case 2:
-      small_bm_pixel.B += 11;// NOLINT Magic Number
-      break;
-    }
-
-
-    ++max_row;
-    if (max_row >= bm->height()) { max_row = 0; }
-    ++max_col;
-    if (max_col >= bm->width()) { max_col = 0; }
+    draw(*bm,
+      Size{ 8, 8 },// NOLINT magic number
+      Point{ 0, 0 },
+      std::chrono::duration_cast<std::chrono::milliseconds>(game_clock),
+      map);
   };
 
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
@@ -185,7 +321,7 @@ int main(int argc, const char **argv)
       fmt::format("{} {}",
         my_awesome_game::cmake::project_name,
         my_awesome_game::cmake::project_version));// version string, acquired
-                                            // from config.hpp via CMake
+                                                  // from config.hpp via CMake
 
     game_iteration_canvas();
 
