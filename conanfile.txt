@@ -5,6 +5,8 @@ catch2/2.13.8
 docopt.cpp/0.6.3
 #fmt/8.1.1
 spdlog/1.9.2
+expat/2.4.6
+imagemagick/7.0.11-14
 
 [generators]
 cmake_find_package_multi
