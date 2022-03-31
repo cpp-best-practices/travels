@@ -14,13 +14,79 @@
 // the source template at `configured_files/config.hpp.in`.
 #include <internal_use_only/config.hpp>
 
+template<typename Type> struct Basic_Color;
 
-struct Color
+template<typename OutType, typename InType>
+[[nodiscard]] constexpr Basic_Color<OutType> color_cast(Basic_Color<InType> input) noexcept
 {
-  std::uint8_t R{};
-  std::uint8_t G{};
-  std::uint8_t B{};
+  if constexpr (std::is_same_v<OutType, InType>) { return input; }
+
+  constexpr auto to = [] {
+    if constexpr (std::is_floating_point_v<InType>) {
+      if constexpr (std::is_floating_point_v<OutType>) {
+        // just static cast from one floating point to another
+        return [](const auto in) { return static_cast<OutType>(in); };
+      } else {
+        // from floating point to integral
+        // we want to scale 0-1 to 0-maxint for given type
+        return
+          [](const auto in) { return static_cast<OutType>(std::llround(in * std::numeric_limits<OutType>::max())); };
+      }
+    } else {
+      // input is not floating point
+      if constexpr (std::is_integral_v<OutType>) {
+        // and neither is output
+        return [](const auto in) {
+          // scale 0-1, then scale that to output type
+          return static_cast<OutType>(
+            std::llround((static_cast<double>(in) / static_cast<double>(std::numeric_limits<InType>::max()))
+                         * static_cast<double>(std::numeric_limits<OutType>::max())));
+        };
+      } else {
+        // output is floating point
+        return [](const auto in) {
+          return static_cast<OutType>(in) / static_cast<OutType>(std::numeric_limits<InType>::max());
+        };
+      }
+    }
+  }();
+
+  return Basic_Color<OutType>{ to(input.R), to(input.G), to(input.B), to(input.A) };
+}
+
+template<typename Type> struct Basic_Color
+{
+  Type R{};
+  Type G{};
+  Type B{};
+  Type A{};
+
+
+  template<typename RHS> constexpr auto &operator+=(Basic_Color<RHS> rhs) noexcept
+  {
+    // from stackoverflow
+    // Short answer:
+    // if we want to overlay c0 over c1 both with some alpha then
+    // a01 = (1 - a0)·a1 + a0
+    // r01 = ((1 - a0)·a1·r1 + a0·r0) / a01
+    // g01 = ((1 - a0)·a1·g1 + a0·g0) / a01
+    // b01 = ((1 - a0)·a1·b1 + a0·b0) / a01
+
+    const auto c1 = color_cast<double>(*this);
+    const auto c0 = color_cast<double>(rhs);
+    auto c01 = Basic_Color<double>{};
+
+    c01.A = (1 - c0.A) * c1.A + c0.A;
+    c01.R = ((1 - c0.A) * c1.A * c1.R + c0.A * c0.R) / c01.A;
+    c01.G = ((1 - c0.A) * c1.A * c1.G + c0.A * c0.G) / c01.A;
+    c01.B = ((1 - c0.A) * c1.A * c1.B + c0.A * c0.B) / c01.A;
+
+    *this = color_cast<Type>(c01);
+    return *this;
+  }
 };
+
+using Color = Basic_Color<std::uint8_t>;
 
 struct Size
 {
@@ -137,9 +203,16 @@ struct Bitmap : ftxui::Node
   Vector2D<Color> pixels;
 };
 
+
 struct Location
 {
   std::function<void()> action;
+  std::function<void(Vector2D_Span<Color> &, std::chrono::milliseconds, Point)> draw;
+};
+
+struct Character
+{
+  Point map_location{};
   std::function<void(Vector2D_Span<Color> &, std::chrono::milliseconds, Point)> draw;
 };
 
@@ -161,18 +234,16 @@ Game_Map make_map()
     for (std::size_t x = 0; x < pixels.size().width; ++x) {
       for (std::size_t y = 0; y < pixels.size().height; ++y) {
         if (x == 0 || y == 0 || x == pixels.size().width - 1 || y == pixels.size().height - 1) {
-          pixels.at(Point{ x, y }) = Color{ 128, 128, 128 };// NOLINT Magic numbers
+          pixels.at(Point{ x, y }) = Color{ 128, 128, 128, 255 };// NOLINT Magic numbers
         } else {
-          switch ((game_clock.count() / 1000) % 2) { // NOLINT Magic numbers
-            case 0:
-              pixels.at(Point{ x, y }) = Color{ 255, 255, 255 };// NOLINT Magic numbers
-              break;
-            case 1: // NOLINT Magic Numbers
-              pixels.at(Point{ x, y }) = Color{ 200, 240, 240 };// NOLINT Magic numbers
-              break;
+          switch ((game_clock.count() / 1000) % 2) {// NOLINT Magic numbers
+          case 0:
+            pixels.at(Point{ x, y }) = Color{ 255, 255, 255, 255 };// NOLINT Magic numbers
+            break;
+          case 1:// NOLINT Magic Numbers
+            pixels.at(Point{ x, y }) = Color{ 200, 240, 240, 255 };// NOLINT Magic numbers
+            break;
           }
-
-
         }
       }
     }
@@ -236,24 +307,41 @@ void game_iteration_canvas()
   double fps = 0;
   auto start_time = std::chrono::steady_clock::now();
 
+  Character player;
+  player.draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
+                  [[maybe_unused]] std::chrono::milliseconds game_clock,
+                  [[maybe_unused]] Point map_location) {
+    // with with a fully saturated red at 50% alpha
+    for (std::size_t x = 0; x < pixels.size().width; ++x) {
+      for (std::size_t y = 0; y < pixels.size().height; ++y) {
+        pixels.at(Point{ x, y }) += Color{ 255, 0, 0, 128 };// NOLINT magic number
+      }
+    }
+  };
 
   // to do, add total game time clock also, not just current elapsed time
   auto game_iteration = [&](const std::chrono::steady_clock::duration elapsed_time) {
     // in here we simulate however much game time has elapsed. Update animations,
     // run character AI, whatever, update stats, etc
 
-    // this isn't actually timing based for now, it's just updating the display however fast it can
     fps = 1.0
           / (static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count())
              / 1'000'000.0);// NOLINT magic numbers
 
-    const auto game_clock = std::chrono::steady_clock::now() - start_time;
+    const auto game_clock =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
 
+    // just draw the map
     draw(*bm,
       Size{ 8, 8 },// NOLINT magic number
       Point{ 0, 0 },
-      std::chrono::duration_cast<std::chrono::milliseconds>(game_clock),
+      game_clock,
       map);
+
+
+    auto player_span = Vector2D_Span<Color>(Point{ 20, 25 }, Size{ 10, 10 }, bm->pixels);// NOLINT Magic number
+
+    player.draw(player_span, game_clock, player.map_location);
   };
 
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
