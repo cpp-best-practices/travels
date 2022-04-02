@@ -1,4 +1,5 @@
 #include <array>
+#include <filesystem>
 #include <functional>
 #include <iostream>
 #include <random>
@@ -7,6 +8,7 @@
 #include <ftxui/component/captured_mouse.hpp>// for ftxui
 #include <ftxui/component/component.hpp>// for Slider
 #include <ftxui/component/screen_interactive.hpp>// for ScreenInteractive
+#include <lodepng.h>
 #include <spdlog/spdlog.h>
 
 // This file will be generated automatically when you run the CMake
@@ -204,6 +206,36 @@ struct Bitmap : ftxui::Node
 };
 
 
+Vector2D<Color> load_png(const std::filesystem::path &filename)
+{
+  std::vector<unsigned char> image;// the raw pixels
+  unsigned width{};
+  unsigned height{};
+
+  // decode
+  unsigned error = lodepng::decode(image, width, height, filename.string());
+
+  // if there's an error, display it
+  if (error != 0) { std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl; }
+
+  // the pixels are now in the vector "image", 4 bytes per pixel, ordered RGBARGBA..., use it as texture, draw it, ...
+  //
+  Vector2D<Color> results{ Size{ static_cast<std::size_t>(width), static_cast<std::size_t>(height) } };
+
+  std::size_t position = 0;
+  for (std::size_t y = 0; y < results.size().height; ++y) {
+    for (std::size_t x = 0; x < results.size().width; ++x) {
+      Color &c = results.at(Point{ x, y });
+      c.R = image[position++];
+      c.G = image[position++];
+      c.B = image[position++];
+      c.A = image[position++];
+    }
+  }
+
+  return results;
+}
+
 struct Location
 {
   std::function<void()> action;
@@ -307,17 +339,21 @@ void game_iteration_canvas()
   double fps = 0;
   auto start_time = std::chrono::steady_clock::now();
 
+  const auto player_bitmap = load_png("player.png");
+
   Character player;
-  player.draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
+  player.draw = [&]([[maybe_unused]] Vector2D_Span<Color> &pixels,
                   [[maybe_unused]] std::chrono::milliseconds game_clock,
                   [[maybe_unused]] Point map_location) {
     // with with a fully saturated red at 50% alpha
     for (std::size_t x = 0; x < pixels.size().width; ++x) {
       for (std::size_t y = 0; y < pixels.size().height; ++y) {
-        pixels.at(Point{ x, y }) += Color{ 255, 0, 0, 128 };// NOLINT magic number
+        pixels.at(Point{ x, y }) += player_bitmap.at(Point{ x, y });
       }
     }
   };
+
+  Point character_location{ 0, 0 };
 
   // to do, add total game time clock also, not just current elapsed time
   auto game_iteration = [&](const std::chrono::steady_clock::duration elapsed_time) {
@@ -339,7 +375,7 @@ void game_iteration_canvas()
       map);
 
 
-    auto player_span = Vector2D_Span<Color>(Point{ 20, 25 }, Size{ 10, 10 }, bm->pixels);// NOLINT Magic number
+    auto player_span = Vector2D_Span<Color>(character_location, Size{ 10, 10 }, bm->pixels);// NOLINT Magic number
 
     player.draw(player_span, game_clock, player.map_location);
   };
@@ -349,6 +385,8 @@ void game_iteration_canvas()
   int counter = 0;
 
   auto last_time = std::chrono::steady_clock::now();
+
+  std::string last_character;
 
   auto make_layout = [&] {
     // This code actually processes the draw event
@@ -363,12 +401,28 @@ void game_iteration_canvas()
     return ftxui::hbox({ bm | ftxui::border,
       ftxui::vbox({ ftxui::text("Frame: " + std::to_string(counter)),
         ftxui::text("FPS: " + std::to_string(fps)),
+        ftxui::text("Character: " + last_character),
         small_bm | ftxui::border }) });
   };
 
   auto container = ftxui::Container::Vertical({});
+  auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &e) {
+    if (e == ftxui::Event::ArrowUp) {
+      --character_location.y;
+    } else if (e == ftxui::Event::ArrowDown) {
+      ++character_location.y;
+    } else if (e == ftxui::Event::ArrowLeft) {
+      --character_location.x;
+    } else if (e == ftxui::Event::ArrowRight) {
+      ++character_location.x;
+    }
 
-  auto renderer = ftxui::Renderer(container, make_layout);
+
+    return false;
+  });
+
+
+  auto renderer = ftxui::Renderer(key_press, make_layout);
 
   std::atomic<bool> refresh_ui_continue = true;
 
