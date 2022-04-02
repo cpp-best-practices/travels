@@ -1,6 +1,7 @@
 find_package(fmt CONFIG)
 find_package(spdlog CONFIG)
 find_package(docopt CONFIG)
+find_package(lodepng CONFIG)
 
 # Generic test that uses conan libs
 add_executable(intro main.cpp)
@@ -10,7 +11,8 @@ target_link_libraries(
           project_warnings
           docopt::docopt
           fmt::fmt
-          spdlog::spdlog)
+          spdlog::spdlog
+          lodepng::lodepng)
 
 target_link_system_libraries(
   intro
