@@ -236,10 +236,13 @@ Vector2D<Color> load_png(const std::filesystem::path &filename)
   return results;
 }
 
+enum struct Direction { North, South, East, West };
+
 struct Location
 {
   std::function<void()> action;
   std::function<void(Vector2D_Span<Color> &, std::chrono::milliseconds, Point)> draw;
+  std::function<bool(std::chrono::milliseconds, Point, Direction)> can_enter;
 };
 
 struct Character
@@ -253,12 +256,21 @@ struct Game_Map
 {
   explicit Game_Map(const Size size) : locations{ size } {}
   Vector2D<Location> locations;
+  [[nodiscard]] bool can_enter_from(std::chrono::milliseconds game_clock, Point location, Direction from) const
+  {
+    const auto &map_location = locations.at(location);
+    if (map_location.can_enter) {
+      return map_location.can_enter(game_clock, location, from);
+    } else {
+      return true;
+    }
+  }
 };
 
 
 Game_Map make_map()
 {
-  Game_Map map{ Size{ 5, 5 } };// NOLINT magic numbers
+  Game_Map map{ Size{ 10, 10 } };// NOLINT magic numbers
 
   auto solid_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
                       [[maybe_unused]] std::chrono::milliseconds game_clock,
@@ -281,10 +293,16 @@ Game_Map make_map()
     }
   };
 
+  auto cannot_enter = [](std::chrono::milliseconds, Point, Direction) -> bool { return false; };
+
   auto empty_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
                       [[maybe_unused]] std::chrono::milliseconds game_clock,
                       [[maybe_unused]] Point map_location) {
-
+    for (std::size_t x = 0; x < pixels.size().width; ++x) {
+      for (std::size_t y = 0; y < pixels.size().height; ++y) {
+        pixels.at(Point{ x, y }) = Color{ 10, 10, 10, 255 };// NOLINT Magic numbers
+      }
+    }
   };
 
   for (std::size_t x = 0; x < map.locations.size().width; ++x) {
@@ -292,14 +310,22 @@ Game_Map make_map()
   }
 
   map.locations.at(Point{ 2, 3 }).draw = solid_draw;
+  map.locations.at(Point{ 2, 3 }).can_enter = cannot_enter;
   map.locations.at(Point{ 1, 4 }).draw = solid_draw;
+  map.locations.at(Point{ 1, 4 }).can_enter = cannot_enter;
   map.locations.at(Point{ 0, 2 }).draw = solid_draw;
+  map.locations.at(Point{ 0, 2 }).can_enter = cannot_enter;
 
 
   return map;
 }
 
-void draw(Bitmap &viewport, Size tile_size, Point map_center, std::chrono::milliseconds time, const Game_Map &map)
+void draw(Bitmap &viewport,
+  Size tile_size,
+  Point map_center,
+  std::chrono::milliseconds time,
+  const Game_Map &map,
+  const Character &character)
 {
   const auto num_wide = viewport.pixels.size().width / tile_size.width;
   const auto num_high = viewport.pixels.size().width / tile_size.height;
@@ -310,8 +336,8 @@ void draw(Bitmap &viewport, Size tile_size, Point map_center, std::chrono::milli
   const auto min_x = x_offset;
   const auto min_y = y_offset;
 
-  const auto max_x = num_wide - x_offset;
-  const auto max_y = num_high - y_offset;
+  const auto max_x = map.locations.size().width - x_offset - (num_wide % 2);
+  const auto max_y = map.locations.size().height - y_offset - (num_wide % 2);
 
   const auto center_map_location =
     Point{ std::clamp(map_center.x, min_x, max_x), std::clamp(map_center.y, min_y, max_y) };
@@ -325,11 +351,22 @@ void draw(Bitmap &viewport, Size tile_size, Point map_center, std::chrono::milli
       map.locations.at(map_location).draw(span, time, map_location);
     }
   }
+
+  const auto character_relative_location = character.map_location - upper_left_map_location;
+
+  const auto character_location =
+    Point{ character_relative_location.x * tile_size.width, character_relative_location.y * tile_size.height };
+
+  auto character_span = Vector2D_Span<Color>(character_location, tile_size, viewport.pixels);
+
+  character.draw(character_span, time, character.map_location);
 }
 
 void game_iteration_canvas()
 {
   const auto map = make_map();
+
+  static constexpr auto Tile_Size = Size{ 8, 8 };
 
   // this should probably have a `bitmap` helper function that does what you expect
   // similar to the other parts of FTXUI
@@ -353,7 +390,8 @@ void game_iteration_canvas()
     }
   };
 
-  Point character_location{ 0, 0 };
+  ftxui::Event last_event;
+  ftxui::Event current_event;
 
   // to do, add total game time clock also, not just current elapsed time
   auto game_iteration = [&](const std::chrono::steady_clock::duration elapsed_time) {
@@ -367,17 +405,33 @@ void game_iteration_canvas()
     const auto game_clock =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
 
+    [&] {
+      if (current_event != last_event) {
+        auto location = player.map_location;
+        Direction from{};
+        if (current_event == ftxui::Event::ArrowUp) {
+          --location.y;
+          from = Direction::South;
+        } else if (current_event == ftxui::Event::ArrowDown) {
+          ++location.y;
+          from = Direction::North;
+        } else if (current_event == ftxui::Event::ArrowLeft) {
+          --location.x;
+          from = Direction::East;
+        } else if (current_event == ftxui::Event::ArrowRight) {
+          ++location.x;
+          from = Direction::West;
+        } else {
+          return;
+        }
+
+        if (map.can_enter_from(game_clock, location, from)) { player.map_location = location; }
+      }
+    }();
+
+
     // just draw the map
-    draw(*bm,
-      Size{ 8, 8 },// NOLINT magic number
-      Point{ 0, 0 },
-      game_clock,
-      map);
-
-
-    auto player_span = Vector2D_Span<Color>(character_location, Size{ 10, 10 }, bm->pixels);// NOLINT Magic number
-
-    player.draw(player_span, game_clock, player.map_location);
+    draw(*bm, Tile_Size, player.map_location, game_clock, map, player);
   };
 
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
@@ -406,18 +460,9 @@ void game_iteration_canvas()
   };
 
   auto container = ftxui::Container::Vertical({});
+
   auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &e) {
-    if (e == ftxui::Event::ArrowUp) {
-      --character_location.y;
-    } else if (e == ftxui::Event::ArrowDown) {
-      ++character_location.y;
-    } else if (e == ftxui::Event::ArrowLeft) {
-      --character_location.x;
-    } else if (e == ftxui::Event::ArrowRight) {
-      ++character_location.x;
-    }
-
-
+    last_event = std::exchange(current_event, e);
     return false;
   });
 
