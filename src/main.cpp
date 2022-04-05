@@ -2,290 +2,44 @@
 #include <filesystem>
 #include <functional>
 #include <iostream>
-#include <random>
 
 #include <docopt/docopt.h>
-#include <ftxui/component/captured_mouse.hpp>// for ftxui
 #include <ftxui/component/component.hpp>// for Slider
 #include <ftxui/component/screen_interactive.hpp>// for ScreenInteractive
-#include <lodepng.h>
+
 #include <spdlog/spdlog.h>
+
+#include "bitmap.hpp"
+#include "color.hpp"
+#include "game_components.hpp"
+#include "point.hpp"
+#include "size.hpp"
 
 // This file will be generated automatically when you run the CMake
 // configuration step. It creates a namespace called `my_awesome_game`. You can modify
 // the source template at `configured_files/config.hpp.in`.
 #include <internal_use_only/config.hpp>
 
-template<typename Type> struct Basic_Color;
 
-template<typename OutType, typename InType>
-[[nodiscard]] constexpr Basic_Color<OutType> color_cast(Basic_Color<InType> input) noexcept
-{
-  if constexpr (std::is_same_v<OutType, InType>) { return input; }
-
-  constexpr auto to = [] {
-    if constexpr (std::is_floating_point_v<InType>) {
-      if constexpr (std::is_floating_point_v<OutType>) {
-        // just static cast from one floating point to another
-        return [](const auto in) { return static_cast<OutType>(in); };
-      } else {
-        // from floating point to integral
-        // we want to scale 0-1 to 0-maxint for given type
-        return
-          [](const auto in) { return static_cast<OutType>(std::llround(in * std::numeric_limits<OutType>::max())); };
-      }
-    } else {
-      // input is not floating point
-      if constexpr (std::is_integral_v<OutType>) {
-        // and neither is output
-        return [](const auto in) {
-          // scale 0-1, then scale that to output type
-          return static_cast<OutType>(
-            std::llround((static_cast<double>(in) / static_cast<double>(std::numeric_limits<InType>::max()))
-                         * static_cast<double>(std::numeric_limits<OutType>::max())));
-        };
-      } else {
-        // output is floating point
-        return [](const auto in) {
-          return static_cast<OutType>(in) / static_cast<OutType>(std::numeric_limits<InType>::max());
-        };
-      }
-    }
-  }();
-
-  return Basic_Color<OutType>{ to(input.R), to(input.G), to(input.B), to(input.A) };
-}
-
-template<typename Type> struct Basic_Color
-{
-  Type R{};
-  Type G{};
-  Type B{};
-  Type A{};
-
-
-  template<typename RHS> constexpr auto &operator+=(Basic_Color<RHS> rhs) noexcept
-  {
-    // from stackoverflow
-    // Short answer:
-    // if we want to overlay c0 over c1 both with some alpha then
-    // a01 = (1 - a0)·a1 + a0
-    // r01 = ((1 - a0)·a1·r1 + a0·r0) / a01
-    // g01 = ((1 - a0)·a1·g1 + a0·g0) / a01
-    // b01 = ((1 - a0)·a1·b1 + a0·b0) / a01
-
-    const auto c1 = color_cast<double>(*this);
-    const auto c0 = color_cast<double>(rhs);
-    auto c01 = Basic_Color<double>{};
-
-    c01.A = (1 - c0.A) * c1.A + c0.A;
-    c01.R = ((1 - c0.A) * c1.A * c1.R + c0.A * c0.R) / c01.A;
-    c01.G = ((1 - c0.A) * c1.A * c1.G + c0.A * c0.G) / c01.A;
-    c01.B = ((1 - c0.A) * c1.A * c1.B + c0.A * c0.B) / c01.A;
-
-    *this = color_cast<Type>(c01);
-    return *this;
-  }
-};
-
-using Color = Basic_Color<std::uint8_t>;
-
-struct Size
-{
-  std::size_t width;
-  std::size_t height;
-};
-
-struct Point
-{
-  std::size_t x;
-  std::size_t y;
-
-  [[nodiscard]] friend constexpr auto operator+(Point lhs, Point rhs) noexcept
-  {
-    return Point{ lhs.x + rhs.x, lhs.y + rhs.y };
-  }
-
-  [[nodiscard]] friend constexpr auto operator-(Point lhs, Point rhs) noexcept
-  {
-    return Point{ lhs.x - rhs.x, lhs.y - rhs.y };
-  }
-};
-
-
-template<typename Contained> class Vector2D
-{
-  Size size_;
-  std::vector<Contained> data_ = decltype(data_)(size_.width * size_.height, Contained{});
-
-
-  void validate_position(const Point p) const
-  {
-    if (p.x >= size_.width || p.y >= size_.height) { throw std::range_error("index out of range"); }
-  }
-
-
-public:
-  explicit Vector2D(const Size size) : size_(size) {}
-
-  [[nodiscard]] auto size() const noexcept { return size_; }
-
-  [[nodiscard]] Contained &at(const Point p)
-  {
-    validate_position(p);
-    return data_.at(p.y * size_.width + p.x);
-  }
-
-  [[nodiscard]] const Contained &at(const Point p) const
-  {
-    validate_position(p);
-    return data_.at(p.y * size_.width + p.x);
-  }
-};
-
-template<typename Contained> class Vector2D_Span
-{
-  Point origin_;
-  Size size_;
-
-  std::reference_wrapper<Vector2D<Contained>> data_;
-
-public:
-  Vector2D_Span(const Point origin, const Size size, Vector2D<Contained> &data)
-    : origin_{ origin }, size_{ size }, data_{ data }
-  {}
-
-  [[nodiscard]] Size size() const noexcept { return size_; }
-
-  void validate_position(const Point p) const
-  {
-    if (p.x >= size_.width || p.y >= size_.height) { throw std::range_error("index out of range"); }
-  }
-
-
-  [[nodiscard]] const Contained &at(const Point p) const
-  {
-    validate_position(p);
-    return data_.get().at(p + origin_);
-  }
-
-  [[nodiscard]] Contained &at(const Point p)
-  {
-    validate_position(p);
-    return data_.get().at(p + origin_);
-  }
-};
-
-// A simple way of representing a bitmap on screen using only characters
-struct Bitmap : ftxui::Node
-{
-  explicit Bitmap(const Size s) : pixels(s) {}
-
-  void ComputeRequirement() override
-  {
-    requirement_ = ftxui::Requirement{ .min_x = static_cast<int>(pixels.size().width),
-      .min_y = static_cast<int>(pixels.size().height / 2),
-      .selected_box{ 0, 0, 0, 0 } };
-  }
-
-  void Render(ftxui::Screen &screen) override
-  {
-    for (std::size_t x = 0; x < pixels.size().width; ++x) {
-      for (std::size_t y = 0; y < pixels.size().height / 2; ++y) {
-        auto &p = screen.PixelAt(box_.x_min + static_cast<int>(x), box_.y_min + static_cast<int>(y));
-        p.character = "▄";
-        const auto &top_color = pixels.at(Point{ x, y * 2 });
-        const auto &bottom_color = pixels.at(Point{ x, y * 2 + 1 });
-        p.background_color = ftxui::Color{ top_color.R, top_color.G, top_color.B };
-        p.foreground_color = ftxui::Color{ bottom_color.R, bottom_color.G, bottom_color.B };
-      }
-    }
-  }
-
-  Vector2D<Color> pixels;
-};
-
-
-Vector2D<Color> load_png(const std::filesystem::path &filename)
-{
-  std::vector<unsigned char> image;// the raw pixels
-  unsigned width{};
-  unsigned height{};
-
-  // decode
-  unsigned error = lodepng::decode(image, width, height, filename.string());
-
-  // if there's an error, display it
-  if (error != 0) { std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl; }
-
-  // the pixels are now in the vector "image", 4 bytes per pixel, ordered RGBARGBA..., use it as texture, draw it, ...
-  //
-  Vector2D<Color> results{ Size{ static_cast<std::size_t>(width), static_cast<std::size_t>(height) } };
-
-  std::size_t position = 0;
-  for (std::size_t y = 0; y < results.size().height; ++y) {
-    for (std::size_t x = 0; x < results.size().width; ++x) {
-      Color &c = results.at(Point{ x, y });
-      c.R = image[position++];
-      c.G = image[position++];
-      c.B = image[position++];
-      c.A = image[position++];
-    }
-  }
-
-  return results;
-}
-
-enum struct Direction { North, South, East, West };
-
-struct Location
-{
-  std::function<void()> action;
-  std::function<void(Vector2D_Span<Color> &, std::chrono::milliseconds, Point)> draw;
-  std::function<bool(std::chrono::milliseconds, Point, Direction)> can_enter;
-};
-
-struct Character
-{
-  Point map_location{};
-  std::function<void(Vector2D_Span<Color> &, std::chrono::milliseconds, Point)> draw;
-};
-
-
-struct Game_Map
-{
-  explicit Game_Map(const Size size) : locations{ size } {}
-  Vector2D<Location> locations;
-  [[nodiscard]] bool can_enter_from(std::chrono::milliseconds game_clock, Point location, Direction from) const
-  {
-    const auto &map_location = locations.at(location);
-    if (map_location.can_enter) {
-      return map_location.can_enter(game_clock, location, from);
-    } else {
-      return true;
-    }
-  }
-};
-
-
-Game_Map make_map()
+namespace lefticus::my_awesome_game {
+Game_Map make_map()// NOLINT congetive complexity
 {
   Game_Map map{ Size{ 10, 10 } };// NOLINT magic numbers
 
   auto solid_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
                       [[maybe_unused]] std::chrono::milliseconds game_clock,
                       [[maybe_unused]] Point map_location) {
-    for (std::size_t x = 0; x < pixels.size().width; ++x) {
-      for (std::size_t y = 0; y < pixels.size().height; ++y) {
-        if (x == 0 || y == 0 || x == pixels.size().width - 1 || y == pixels.size().height - 1) {
-          pixels.at(Point{ x, y }) = Color{ 128, 128, 128, 255 };// NOLINT Magic numbers
+    for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
+      for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
+        if (cur_x == 0 || cur_y == 0 || cur_x == pixels.size().width - 1 || cur_y == pixels.size().height - 1) {
+          pixels.at(Point{ cur_x, cur_y }) = Color{ 128, 128, 128, 255 };// NOLINT Magic numbers
         } else {
           switch ((game_clock.count() / 1000) % 2) {// NOLINT Magic numbers
           case 0:
-            pixels.at(Point{ x, y }) = Color{ 255, 255, 255, 255 };// NOLINT Magic numbers
+            pixels.at(Point{ cur_x, cur_y }) = Color{ 255, 255, 255, 255 };// NOLINT Magic numbers
             break;
           case 1:// NOLINT Magic Numbers
-            pixels.at(Point{ x, y }) = Color{ 200, 240, 240, 255 };// NOLINT Magic numbers
+            pixels.at(Point{ cur_x, cur_y }) = Color{ 200, 240, 240, 255 };// NOLINT Magic numbers
             break;
           }
         }
@@ -298,15 +52,15 @@ Game_Map make_map()
   auto empty_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
                       [[maybe_unused]] std::chrono::milliseconds game_clock,
                       [[maybe_unused]] Point map_location) {
-    for (std::size_t x = 0; x < pixels.size().width; ++x) {
-      for (std::size_t y = 0; y < pixels.size().height; ++y) {
-        pixels.at(Point{ x, y }) = Color{ 10, 10, 10, 255 };// NOLINT Magic numbers
+    for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
+      for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
+        pixels.at(Point{ cur_x, cur_y }) = Color{ 10, 10, 10, 255 };// NOLINT Magic numbers
       }
     }
   };
 
-  for (std::size_t x = 0; x < map.locations.size().width; ++x) {
-    for (std::size_t y = 0; y < map.locations.size().height; ++y) { map.locations.at(Point{ x, y }).draw = empty_draw; }
+  for (std::size_t cur_x = 0; cur_x < map.locations.size().width; ++cur_x) {
+    for (std::size_t cur_y = 0; cur_y < map.locations.size().height; ++cur_y) { map.locations.at(Point{ cur_x, cur_y }).draw = empty_draw; }
   }
 
   map.locations.at(Point{ 2, 3 }).draw = solid_draw;
@@ -314,7 +68,9 @@ Game_Map make_map()
   map.locations.at(Point{ 1, 4 }).draw = solid_draw;
   map.locations.at(Point{ 1, 4 }).can_enter = cannot_enter;
   map.locations.at(Point{ 0, 2 }).draw = solid_draw;
-  map.locations.at(Point{ 0, 2 }).can_enter = cannot_enter;
+  map.locations.at(Point{ 0, 2 }).can_enter = [](std::chrono::milliseconds, Point, Direction direction) {
+    return direction == Direction::South;
+  };
 
 
   return map;
@@ -344,10 +100,10 @@ void draw(Bitmap &viewport,
 
   const auto upper_left_map_location = center_map_location - Point{ min_x, min_y };
 
-  for (std::size_t x = 0; x < num_wide; ++x) {
-    for (std::size_t y = 0; y < num_high; ++y) {
-      auto span = Vector2D_Span<Color>(Point{ x * tile_size.width, y * tile_size.width }, tile_size, viewport.pixels);
-      const auto map_location = Point{ x, y } + upper_left_map_location;
+  for (std::size_t cur_x = 0; cur_x < num_wide; ++cur_x) {
+    for (std::size_t cur_y = 0; cur_y < num_high; ++cur_y) {
+      auto span = Vector2D_Span<Color>(Point{ cur_x * tile_size.width, cur_y * tile_size.width }, tile_size, viewport.pixels);
+      const auto map_location = Point{ cur_x, cur_y } + upper_left_map_location;
       map.locations.at(map_location).draw(span, time, map_location);
     }
   }
@@ -383,9 +139,9 @@ void game_iteration_canvas()
                   [[maybe_unused]] std::chrono::milliseconds game_clock,
                   [[maybe_unused]] Point map_location) {
     // with with a fully saturated red at 50% alpha
-    for (std::size_t x = 0; x < pixels.size().width; ++x) {
-      for (std::size_t y = 0; y < pixels.size().height; ++y) {
-        pixels.at(Point{ x, y }) += player_bitmap.at(Point{ x, y });
+    for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
+      for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
+        pixels.at(Point{ cur_x, cur_y }) += player_bitmap.at(Point{ cur_x, cur_y });
       }
     }
   };
@@ -409,6 +165,7 @@ void game_iteration_canvas()
       if (current_event != last_event) {
         auto location = player.map_location;
         Direction from{};
+
         if (current_event == ftxui::Event::ArrowUp) {
           --location.y;
           from = Direction::South;
@@ -461,8 +218,8 @@ void game_iteration_canvas()
 
   auto container = ftxui::Container::Vertical({});
 
-  auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &e) {
-    last_event = std::exchange(current_event, e);
+  auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &event) {
+    last_event = std::exchange(current_event, event);
     return false;
   });
 
@@ -486,6 +243,7 @@ void game_iteration_canvas()
   refresh_ui_continue = false;
   refresh_ui.join();
 }
+}// namespace lefticus::my_awesome_game
 
 int main(int argc, const char **argv)
 {
@@ -510,7 +268,7 @@ int main(int argc, const char **argv)
         my_awesome_game::cmake::project_version));// version string, acquired
                                                   // from config.hpp via CMake
 
-    game_iteration_canvas();
+    lefticus::my_awesome_game::game_iteration_canvas();
 
     //    consequence_game();
   } catch (const std::exception &e) {
