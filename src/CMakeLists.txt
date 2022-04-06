@@ -4,7 +4,7 @@ find_package(docopt CONFIG)
 find_package(lodepng CONFIG)
 
 # Generic test that uses conan libs
-add_executable(intro main.cpp color.hpp size.hpp point.hpp vector2d.hpp bitmap.hpp bitmap.cpp game_components.hpp)
+add_executable(intro main.cpp color.hpp size.hpp point.hpp vector2d.hpp bitmap.hpp bitmap.cpp game_components.hpp game.cpp game.hpp)
 target_link_libraries(
   intro
   PRIVATE project_options

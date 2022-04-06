@@ -60,6 +60,8 @@ struct Game
   std::string current_map;
   std::chrono::milliseconds clock;
   Size tile_size;
+
+  std::string last_message;
 };
 
 }
