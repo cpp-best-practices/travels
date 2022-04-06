@@ -27,14 +27,14 @@ Game_Map make_map()// NOLINT congetive complexity
   Game_Map map{ Size{ 10, 10 } };// NOLINT magic numbers
 
   auto solid_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
-                      [[maybe_unused]] std::chrono::milliseconds game_clock,
+                      [[maybe_unused]] const Game &game,
                       [[maybe_unused]] Point map_location) {
     for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
       for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
         if (cur_x == 0 || cur_y == 0 || cur_x == pixels.size().width - 1 || cur_y == pixels.size().height - 1) {
           pixels.at(Point{ cur_x, cur_y }) = Color{ 128, 128, 128, 255 };// NOLINT Magic numbers
         } else {
-          switch ((game_clock.count() / 1000) % 2) {// NOLINT Magic numbers
+          switch ((game.clock.count() / 1000) % 2) {// NOLINT Magic numbers
           case 0:
             pixels.at(Point{ cur_x, cur_y }) = Color{ 255, 255, 255, 255 };// NOLINT Magic numbers
             break;
@@ -47,10 +47,10 @@ Game_Map make_map()// NOLINT congetive complexity
     }
   };
 
-  auto cannot_enter = [](std::chrono::milliseconds, Point, Direction) -> bool { return false; };
+  auto cannot_enter = [](const Game &, Point, Direction) -> bool { return false; };
 
   auto empty_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
-                      [[maybe_unused]] std::chrono::milliseconds game_clock,
+                      [[maybe_unused]] const Game &game,
                       [[maybe_unused]] Point map_location) {
     for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
       for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
@@ -60,7 +60,9 @@ Game_Map make_map()// NOLINT congetive complexity
   };
 
   for (std::size_t cur_x = 0; cur_x < map.locations.size().width; ++cur_x) {
-    for (std::size_t cur_y = 0; cur_y < map.locations.size().height; ++cur_y) { map.locations.at(Point{ cur_x, cur_y }).draw = empty_draw; }
+    for (std::size_t cur_y = 0; cur_y < map.locations.size().height; ++cur_y) {
+      map.locations.at(Point{ cur_x, cur_y }).draw = empty_draw;
+    }
   }
 
   map.locations.at(Point{ 2, 3 }).draw = solid_draw;
@@ -68,7 +70,7 @@ Game_Map make_map()// NOLINT congetive complexity
   map.locations.at(Point{ 1, 4 }).draw = solid_draw;
   map.locations.at(Point{ 1, 4 }).can_enter = cannot_enter;
   map.locations.at(Point{ 0, 2 }).draw = solid_draw;
-  map.locations.at(Point{ 0, 2 }).can_enter = [](std::chrono::milliseconds, Point, Direction direction) {
+  map.locations.at(Point{ 0, 2 }).can_enter = [](const Game &, Point, Direction direction) {
     return direction == Direction::South;
   };
 
@@ -76,15 +78,36 @@ Game_Map make_map()// NOLINT congetive complexity
   return map;
 }
 
-void draw(Bitmap &viewport,
-  Size tile_size,
-  Point map_center,
-  std::chrono::milliseconds time,
-  const Game_Map &map,
-  const Character &character)
+Game make_game()
 {
-  const auto num_wide = viewport.pixels.size().width / tile_size.width;
-  const auto num_high = viewport.pixels.size().width / tile_size.height;
+  Game retval;
+  retval.maps.emplace("main", make_map());
+  retval.current_map = "main";
+  retval.tile_size = Size{ 8, 8 };// NOLINT Magic Number
+
+  Character player;
+  player.draw = [player_bitmap = load_png("player.png")]([[maybe_unused]] Vector2D_Span<Color> &pixels,
+                  [[maybe_unused]] const Game &game,
+                  [[maybe_unused]] Point map_location) {
+    // with with a fully saturated red at 50% alpha
+    for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
+      for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
+        pixels.at(Point{ cur_x, cur_y }) += player_bitmap.at(Point{ cur_x, cur_y });
+      }
+    }
+  };
+
+
+  retval.player = player;
+
+  return retval;
+}
+
+
+void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &map)
+{
+  const auto num_wide = viewport.pixels.size().width / game.tile_size.width;
+  const auto num_high = viewport.pixels.size().width / game.tile_size.height;
 
   const auto x_offset = num_wide / 2;
   const auto y_offset = num_high / 2;
@@ -102,27 +125,34 @@ void draw(Bitmap &viewport,
 
   for (std::size_t cur_x = 0; cur_x < num_wide; ++cur_x) {
     for (std::size_t cur_y = 0; cur_y < num_high; ++cur_y) {
-      auto span = Vector2D_Span<Color>(Point{ cur_x * tile_size.width, cur_y * tile_size.width }, tile_size, viewport.pixels);
+      auto span = Vector2D_Span<Color>(
+        Point{ cur_x * game.tile_size.width, cur_y * game.tile_size.width }, game.tile_size, viewport.pixels);
       const auto map_location = Point{ cur_x, cur_y } + upper_left_map_location;
-      map.locations.at(map_location).draw(span, time, map_location);
+      map.locations.at(map_location).draw(span, game, map_location);
     }
   }
 
-  const auto character_relative_location = character.map_location - upper_left_map_location;
+  const auto character_relative_location = game.player.map_location - upper_left_map_location;
 
-  const auto character_location =
-    Point{ character_relative_location.x * tile_size.width, character_relative_location.y * tile_size.height };
+  const auto character_location = Point{ character_relative_location.x * game.tile_size.width,
+    character_relative_location.y * game.tile_size.height };
 
-  auto character_span = Vector2D_Span<Color>(character_location, tile_size, viewport.pixels);
+  auto character_span = Vector2D_Span<Color>(character_location, game.tile_size, viewport.pixels);
 
-  character.draw(character_span, time, character.map_location);
+  game.player.draw(character_span, game, game.player.map_location);
+}
+
+void draw(Bitmap &viewport, const Game &game)
+{
+  if (game.maps.contains(game.current_map)) {
+    draw(viewport, game.player.map_location, game, game.maps.at(game.current_map));
+  }
 }
 
 void game_iteration_canvas()
 {
-  const auto map = make_map();
+  auto game = make_game();
 
-  static constexpr auto Tile_Size = Size{ 8, 8 };
 
   // this should probably have a `bitmap` helper function that does what you expect
   // similar to the other parts of FTXUI
@@ -132,19 +162,6 @@ void game_iteration_canvas()
   double fps = 0;
   auto start_time = std::chrono::steady_clock::now();
 
-  const auto player_bitmap = load_png("player.png");
-
-  Character player;
-  player.draw = [&]([[maybe_unused]] Vector2D_Span<Color> &pixels,
-                  [[maybe_unused]] std::chrono::milliseconds game_clock,
-                  [[maybe_unused]] Point map_location) {
-    // with with a fully saturated red at 50% alpha
-    for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
-      for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
-        pixels.at(Point{ cur_x, cur_y }) += player_bitmap.at(Point{ cur_x, cur_y });
-      }
-    }
-  };
 
   ftxui::Event last_event;
   ftxui::Event current_event;
@@ -161,9 +178,11 @@ void game_iteration_canvas()
     const auto game_clock =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
 
+    game.clock = game_clock;
+
     [&] {
       if (current_event != last_event) {
-        auto location = player.map_location;
+        auto location = game.player.map_location;
         Direction from{};
 
         if (current_event == ftxui::Event::ArrowUp) {
@@ -182,13 +201,14 @@ void game_iteration_canvas()
           return;
         }
 
-        if (map.can_enter_from(game_clock, location, from)) { player.map_location = location; }
+        if (game.maps.at(game.current_map).can_enter_from(game, location, from)) {
+          game.player.map_location = location;
+        }
       }
     }();
 
 
-    // just draw the map
-    draw(*bm, Tile_Size, player.map_location, game_clock, map, player);
+    draw(*bm, game);
   };
 
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
