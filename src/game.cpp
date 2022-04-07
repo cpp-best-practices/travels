@@ -63,6 +63,13 @@ Game_Map make_map()// NOLINT cognitive complexity
     game.last_message = "";
   };
 
+  map.locations.at(Point{2,0}).enter_action = [](Game &game, Point, Direction) {
+    Menu menu;
+    menu.items.push_back(Menu::MenuItem{"Hello World", [](auto &){}});
+    menu.items.push_back(Menu::MenuItem{ "Exit Menu", [](Game &menu_action_game) {menu_action_game.clear_menu();}});
+    game.set_menu(menu);
+  };
+
 
   return map;
 }

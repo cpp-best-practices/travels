@@ -1,8 +1,8 @@
 #ifndef MY_AWESOME_GAME_GAME_COMPONENTS_HPP
 #define MY_AWESOME_GAME_GAME_COMPONENTS_HPP
 
-#include <functional>
 #include <chrono>
+#include <functional>
 #include <map>
 #include <optional>
 #include <variant>
@@ -10,8 +10,7 @@
 #include "color.hpp"
 #include "vector2d.hpp"
 
-namespace lefticus::my_awesome_game
-{
+namespace lefticus::my_awesome_game {
 
 struct Game;
 
@@ -47,6 +46,17 @@ struct Game_Map
   }
 };
 
+struct Menu
+{
+  struct MenuItem
+  {
+    std::string text;
+    std::function<void(Game &)> action;
+  };
+
+  std::vector<MenuItem> items;
+};
+
 using Variable = std::variant<double, std::int64_t, std::string>;
 
 struct Game
@@ -54,7 +64,7 @@ struct Game
 
   std::map<std::string, Game_Map> maps;
   Character player;
-  std::function<void (Game &)> start_game;
+  std::function<void(Game &)> start_game;
 
   std::map<std::string, Variable> variables;
   std::vector<std::string> display_variables;
@@ -63,8 +73,38 @@ struct Game
   Size tile_size;
 
   std::string last_message;
+
+  [[nodiscard]] bool has_new_menu() const { return menu_is_new; }
+
+  [[nodiscard]] bool has_menu() const { return static_cast<bool>(menu); }
+
+  [[nodiscard]] Menu get_menu()
+  {
+    if (menu) {
+      menu_is_new = false;
+      return *menu;
+    } else {
+      return Menu{};
+    }
+  }
+
+  void set_menu(Menu menu_)
+  {
+    menu_is_new = true;
+    menu = std::move(menu_);
+  }
+
+  void clear_menu()
+  {
+    menu_is_new = false;
+    menu.reset();
+  }
+
+private:
+  std::optional<Menu> menu;
+  bool menu_is_new = false;
 };
 
-}
+}// namespace lefticus::my_awesome_game
 
 #endif// MY_AWESOME_GAME_GAME_COMPONENTS_HPP

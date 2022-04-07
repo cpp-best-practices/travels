@@ -70,10 +70,28 @@ void draw(Bitmap &viewport, const Game &game)
   }
 }
 
+struct Displayed_Menu
+{
+  Displayed_Menu(Menu menu_, Game &game) : menu{ std::move(menu_) }
+  {
+    ftxui::Components menu_lines;
+
+    std::ranges::transform(menu.items, std::back_inserter(menu_lines), [&game](auto &item) {
+      return ftxui::Button(item.text, [&game, &item]() { item.action(game); });
+    });
+
+    buttons = ftxui::Container::Vertical(menu_lines);
+  }
+
+  Menu menu;
+  ftxui::Component buttons;
+};
+
 void game_iteration_canvas()// NOLINT cognitive complexity
 {
   auto game = make_game();
 
+  Displayed_Menu current_menu{ Menu{}, game };
 
   // this should probably have a `bitmap` helper function that does what you expect
   // similar to the other parts of FTXUI
@@ -102,6 +120,10 @@ void game_iteration_canvas()// NOLINT cognitive complexity
     game.clock = game_clock;
 
     [&] {
+      if (game.has_menu()) {
+        return;
+      }
+
       if (current_event != last_event) {
         auto location = game.player.map_location;
         const auto last_location = location;
@@ -133,7 +155,6 @@ void game_iteration_canvas()// NOLINT cognitive complexity
           auto enter_action = game.maps.at(game.current_map).locations.at(location).enter_action;
           if (enter_action) { enter_action(game, location, from); }
         }
-
       }
     }();
 
@@ -149,9 +170,25 @@ void game_iteration_canvas()// NOLINT cognitive complexity
 
   std::string last_character;
 
+  auto container = ftxui::Container::Vertical({});
+
+  auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &event) {
+    if (game.has_menu()) {
+      return false;
+    } else {
+      last_event = std::exchange(current_event, event);
+      return true;
+    }
+  });
+
   auto make_layout = [&] {
     // This code actually processes the draw event
     const auto new_time = std::chrono::steady_clock::now();
+
+    if (game.has_new_menu()) { current_menu = Displayed_Menu{ game.get_menu(), game };
+      key_press->DetachAllChildren();
+      key_press->Add(current_menu.buttons);
+    }
 
     ++counter;
     // we will dispatch to the game_iteration function, where the work happens
@@ -159,22 +196,17 @@ void game_iteration_canvas()// NOLINT cognitive complexity
     last_time = new_time;
 
     // now actually draw the game elements
-    return ftxui::vbox({ftxui::hbox({ bm | ftxui::border,
-      ftxui::vbox({ ftxui::text("Frame: " + std::to_string(counter)),
-        ftxui::text("FPS: " + std::to_string(fps)),
-        ftxui::text("Character: " + last_character),
-        small_bm | ftxui::border }) }), ftxui::text("Message: " + game.last_message)});
+    return ftxui::vbox({ ftxui::hbox({ (game.has_menu() ? current_menu.buttons->Render() : bm) | ftxui::border,
+                           ftxui::vbox({ ftxui::text("Frame: " + std::to_string(counter)),
+                             ftxui::text("FPS: " + std::to_string(fps)),
+                             ftxui::text("Character: " + last_character),
+                             small_bm | ftxui::border }) }),
+      ftxui::text("Message: " + game.last_message) });
   };
 
-  auto container = ftxui::Container::Vertical({});
-
-  auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &event) {
-    last_event = std::exchange(current_event, event);
-    return false;
-  });
 
 
-  auto renderer = ftxui::Renderer(key_press, make_layout);
+  auto renderer = ftxui::Renderer(game.has_menu() ? current_menu.buttons : key_press, make_layout);
 
   std::atomic<bool> refresh_ui_continue = true;
 
