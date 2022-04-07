@@ -70,7 +70,7 @@ void draw(Bitmap &viewport, const Game &game)
   }
 }
 
-void game_iteration_canvas()
+void game_iteration_canvas()// NOLINT cognitive complexity
 {
   auto game = make_game();
 
@@ -104,6 +104,8 @@ void game_iteration_canvas()
     [&] {
       if (current_event != last_event) {
         auto location = game.player.map_location;
+        const auto last_location = location;
+
         Direction from{};
 
         if (current_event == ftxui::Event::ArrowUp) {
@@ -123,11 +125,15 @@ void game_iteration_canvas()
         }
 
         if (game.maps.at(game.current_map).can_enter_from(game, location, from)) {
-          game.player.map_location = location;
-          auto action = game.maps.at(game.current_map).locations.at(location).action;
+          auto exit_action = game.maps.at(game.current_map).locations.at(last_location).exit_action;
+          if (exit_action) { exit_action(game, last_location, from); }
 
-          if (action) { action(game, location, from); }
+          game.player.map_location = location;
+
+          auto enter_action = game.maps.at(game.current_map).locations.at(location).enter_action;
+          if (enter_action) { enter_action(game, location, from); }
         }
+
       }
     }();
 

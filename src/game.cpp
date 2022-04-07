@@ -56,8 +56,11 @@ Game_Map make_map()// NOLINT cognitive complexity
     return direction == Direction::South;
   };
 
-  map.locations.at(Point{0,3}).action = [](Game &game, Point, Direction) {
+  map.locations.at(Point{0,3}).enter_action = [](Game &game, Point, Direction) {
     game.last_message = "There is a secret entrance to the north";
+  };
+  map.locations.at(Point{ 0, 3 }).exit_action = [](Game &game, Point, Direction) {
+    game.last_message = "";
   };
 
 

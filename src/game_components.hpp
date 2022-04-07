@@ -19,7 +19,8 @@ enum struct Direction { North, South, East, West };
 
 struct Location
 {
-  std::function<void(Game &, Point, Direction)> action;
+  std::function<void(Game &, Point, Direction)> enter_action;
+  std::function<void(Game &, Point, Direction)> exit_action;
   std::function<void(Vector2D_Span<Color> &, const Game &, Point)> draw;
   std::function<bool(const Game &, Point, Direction)> can_enter;
 };
