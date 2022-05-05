@@ -59,6 +59,11 @@ struct Menu
 
 using Variable = std::variant<double, std::int64_t, std::string>;
 
+inline std::string to_string(const Variable &variable)
+{
+  return std::visit([](const auto &value) { return fmt::format("{}", value); }, variable);
+}
+
 struct Game
 {
 
@@ -73,6 +78,12 @@ struct Game
   Size tile_size;
 
   std::string last_message;
+  std::string popup_message;
+
+
+  bool exit_game = false;
+
+  [[nodiscard]] bool has_popup_message() const { return !popup_message.empty(); }
 
   [[nodiscard]] bool has_new_menu() const { return menu_is_new; }
 

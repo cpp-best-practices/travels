@@ -28,7 +28,7 @@ namespace lefticus::my_awesome_game {
 void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &map)
 {
   const auto num_wide = viewport.pixels.size().width / game.tile_size.width;
-  const auto num_high = viewport.pixels.size().width / game.tile_size.height;
+  const auto num_high = viewport.pixels.size().height / game.tile_size.height;
 
   const auto x_offset = num_wide / 2;
   const auto y_offset = num_high / 2;
@@ -37,7 +37,7 @@ void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &
   const auto min_y = y_offset;
 
   const auto max_x = map.locations.size().width - x_offset - (num_wide % 2);
-  const auto max_y = map.locations.size().height - y_offset - (num_wide % 2);
+  const auto max_y = map.locations.size().height - y_offset - (num_high % 2);
 
   const auto center_map_location =
     Point{ std::clamp(map_center.x, min_x, max_x), std::clamp(map_center.y, min_y, max_y) };
@@ -93,9 +93,11 @@ void game_iteration_canvas()// NOLINT cognitive complexity
 
   Displayed_Menu current_menu{ Menu{}, game };
 
+  auto clear_popup_button = ftxui::Button("OK", [&]() { game.popup_message.clear(); });
+
   // this should probably have a `bitmap` helper function that does what you expect
   // similar to the other parts of FTXUI
-  auto bm = std::make_shared<Bitmap>(Size{ 40, 40 });// NOLINT magic numbers
+  auto bm = std::make_shared<Bitmap>(Size{ 64, 40 });// NOLINT magic numbers
   auto small_bm = std::make_shared<Bitmap>(Size{ 6, 6 });// NOLINT magic numbers
 
   double fps = 0;
@@ -120,9 +122,7 @@ void game_iteration_canvas()// NOLINT cognitive complexity
     game.clock = game_clock;
 
     [&] {
-      if (game.has_menu()) {
-        return;
-      }
+      if (game.has_menu()) { return; }
 
       if (current_event != last_event) {
         auto location = game.player.map_location;
@@ -173,40 +173,88 @@ void game_iteration_canvas()// NOLINT cognitive complexity
   auto container = ftxui::Container::Vertical({});
 
   auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &event) {
-    if (game.has_menu()) {
-      return false;
-    } else {
-      last_event = std::exchange(current_event, event);
-      return true;
-    }
+    last_event = std::exchange(current_event, event);
+    return false;
   });
 
   auto make_layout = [&] {
     // This code actually processes the draw event
     const auto new_time = std::chrono::steady_clock::now();
 
-    if (game.has_new_menu()) { current_menu = Displayed_Menu{ game.get_menu(), game };
-      key_press->DetachAllChildren();
-      key_press->Add(current_menu.buttons);
-    }
 
     ++counter;
+
+    if (game.exit_game) { screen.ExitLoopClosure()(); }
+
     // we will dispatch to the game_iteration function, where the work happens
     game_iteration(new_time - last_time);
     last_time = new_time;
 
+
+    ftxui::Elements text_components;
+    text_components.push_back(ftxui::text("Frame: " + std::to_string(counter)));
+    text_components.push_back(
+      ftxui::text(fmt::format("Location: {{{},{}}}", game.player.map_location.x, game.player.map_location.y)));
+
+    for (const auto &variable : game.display_variables) {
+      if (game.variables.contains(variable)) {
+        text_components.push_back(ftxui::text(fmt::format("{}: {}", variable, to_string(game.variables.at(variable)))));
+      }
+    }
+
     // now actually draw the game elements
-    return ftxui::vbox({ ftxui::hbox({ (game.has_menu() ? current_menu.buttons->Render() : bm) | ftxui::border,
-                           ftxui::vbox({ ftxui::text("Frame: " + std::to_string(counter)),
-                             ftxui::text("FPS: " + std::to_string(fps)),
-                             ftxui::text("Character: " + last_character),
-                             small_bm | ftxui::border }) }),
-      ftxui::text("Message: " + game.last_message) });
+    return ftxui::vbox({ ftxui::hbox({ bm | ftxui::border, ftxui::vbox(std::move(text_components)) | ftxui::border }),
+      ftxui::text("Message: " + game.last_message) | ftxui::border });
   };
 
 
+  auto game_renderer = ftxui::Renderer(key_press, make_layout);
 
-  auto renderer = ftxui::Renderer(game.has_menu() ? current_menu.buttons : key_press, make_layout);
+  auto menu_renderer =
+    ftxui::Renderer(current_menu.buttons, [&] { return current_menu.buttons->Render() | ftxui::border; });
+
+  auto popup_renderer = ftxui::Renderer(clear_popup_button, [&] {
+    return ftxui::vbox({ ftxui::paragraphAlignCenter(game.popup_message), clear_popup_button->Render() })
+           | ftxui::border;
+  });
+
+
+  int depth = 0;
+
+  auto main_container = ftxui::Container::Tab({ game_renderer, menu_renderer, popup_renderer }, &depth);
+
+  auto main_renderer = ftxui::Renderer(main_container, [&] {
+    if (game.has_popup_message()) {
+      depth = 2;
+    } else if (game.has_menu()) {
+      depth = 1;
+    } else {
+      depth = 0;
+    }
+
+    if (game.has_new_menu()) {
+      current_menu = Displayed_Menu{ game.get_menu(), game };
+      menu_renderer->DetachAllChildren();
+      menu_renderer->Add(current_menu.buttons);
+    }
+
+    ftxui::Element document = game_renderer->Render();
+
+    if (depth > 0) {
+      if (game.has_menu()) {
+        document = ftxui::dbox({ document, menu_renderer->Render() | ftxui::clear_under | ftxui::center });
+      }
+    }
+
+    if (depth > 1) {
+      if (game.has_popup_message()) {
+        document = ftxui::dbox({ document, popup_renderer->Render() | ftxui::clear_under | ftxui::center });
+      }
+    }
+
+    return document;
+  });
+
 
   std::atomic<bool> refresh_ui_continue = true;
 
@@ -220,7 +268,7 @@ void game_iteration_canvas()// NOLINT cognitive complexity
     }
   });
 
-  screen.Loop(renderer);
+  screen.Loop(main_renderer);
 
   refresh_ui_continue = false;
   refresh_ui.join();

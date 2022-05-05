@@ -73,6 +73,65 @@ public:
     return data_.get().at(point + origin_);
   }
 };
+
+void fill(auto &vector2d, const auto &value)
+{
+  for (std::size_t y = 0; y < vector2d.size().height; ++y) {
+    for (std::size_t x = 0; x < vector2d.size().width; ++x) {
+      vector2d.at(Point{x,y}) = value;
+    }
+  }
+}
+
+
+void fill_border(auto &vector2d, const auto &value)
+{
+  for (std::size_t y = 0; y < vector2d.size().height; ++y) {
+    for (std::size_t x = 0; x < vector2d.size().width; ++x) {
+      if (y == 0 || x == 0 || x == vector2d.size().width - 1 || y == vector2d.size().height -1) {
+        vector2d.at({x,y}) = value;
+      }
+    }
+  }
+}
+
+void fill_line(auto &vector2d, Point from, const Point to, const auto &value)
+{
+  auto plot = [&](auto x, auto y) {
+    vector2d.at({static_cast<std::size_t>(x), static_cast<std::size_t>(y)}) = value;
+  };
+
+  auto plotLine= [&plot](std::ptrdiff_t x0, std::ptrdiff_t y0, std::ptrdiff_t x1, std::ptrdiff_t y1) {
+    auto dx = std::abs(x1 - x0);
+    auto sx = x0 < x1 ? 1 : -1;
+    auto dy = -std::abs(y1 - y0);
+    auto sy = y0 < y1 ? 1 : -1;
+    auto error = dx + dy;
+
+    while (true) {
+      plot(x0, y0);
+      if (x0 == x1 && y0 == y1) { break; }
+
+      auto e2 = 2 * error;
+      if (e2 >= dy) {
+        if (x0 == x1) { break; }
+        error += dy;
+        x0 += sx;
+      }
+
+      if (e2 <= dx) {
+        if (y0 == y1) { break; }
+        error += dx;
+        y0 += sy;
+      }
+    }
+  };
+
+  plotLine(static_cast<std::ptrdiff_t>(from.x), static_cast<std::ptrdiff_t>(from.y),
+    static_cast<std::ptrdiff_t>(to.x), static_cast<std::ptrdiff_t>(to.y));
+}
+
+
 }// namespace lefticus::my_awesome_game
 
 #endif// MY_AWESOME_GAME_VECTOR2D_HPP
