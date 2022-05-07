@@ -7,6 +7,7 @@
 #include <ftxui/component/component.hpp>// for Slider
 #include <ftxui/component/screen_interactive.hpp>// for ScreenInteractive
 
+#include <spdlog/sinks/base_sink.h>
 #include <spdlog/spdlog.h>
 
 #include "bitmap.hpp"
@@ -87,13 +88,40 @@ struct Displayed_Menu
   ftxui::Component buttons;
 };
 
+
+template<typename Mutex> class my_sink : public spdlog::sinks::base_sink<Mutex>
+{
+public:
+  my_sink() = default;
+  std::vector<std::string> event_log;
+
+protected:
+  void sink_it_(const spdlog::details::log_msg &msg) override
+  {
+    spdlog::memory_buf_t formatted;
+    spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
+    event_log.insert(event_log.begin(), fmt::to_string(formatted));
+  }
+
+  void flush_() override {}
+};
+
 void game_iteration_canvas()// NOLINT cognitive complexity
 {
   auto game = make_game();
 
+  // we want to take over as the main spdlog sink
+  auto log_sink = std::make_shared<my_sink<std::mutex>>();
+//  my_sink<std::mutex> log_sink;
+  auto logger = std::make_shared<spdlog::logger>("default", log_sink);
+  spdlog::set_default_logger(logger);
+  spdlog::set_level(spdlog::level::trace);
+
   Displayed_Menu current_menu{ Menu{}, game };
+  bool show_log = false;
 
   auto clear_popup_button = ftxui::Button("OK", [&]() { game.popup_message.clear(); });
+  auto close_log = ftxui::Button("Close", [&] { show_log = false; });
 
   // this should probably have a `bitmap` helper function that does what you expect
   // similar to the other parts of FTXUI
@@ -103,9 +131,8 @@ void game_iteration_canvas()// NOLINT cognitive complexity
   double fps = 0;
   auto start_time = std::chrono::steady_clock::now();
 
+  std::vector<ftxui::Event> events;
 
-  ftxui::Event last_event;
-  ftxui::Event current_event;
 
   // to do, add total game time clock also, not just current elapsed time
   auto game_iteration = [&](const std::chrono::steady_clock::duration elapsed_time) {
@@ -121,16 +148,20 @@ void game_iteration_canvas()// NOLINT cognitive complexity
 
     game.clock = game_clock;
 
-    [&] {
-      if (game.has_menu()) { return; }
+    while (!events.empty()) {
+      const auto current_event = events.front();
+      events.erase(events.begin());
 
-      if (current_event != last_event) {
+      [&] {
         auto location = game.player.map_location;
         const auto last_location = location;
 
         Direction from{};
 
-        if (current_event == ftxui::Event::ArrowUp) {
+        if (current_event.is_character() && current_event.character() == "l") {
+          show_log = true;
+          return;
+        } else if (current_event == ftxui::Event::ArrowUp) {
           --location.y;
           from = Direction::South;
         } else if (current_event == ftxui::Event::ArrowDown) {
@@ -146,17 +177,20 @@ void game_iteration_canvas()// NOLINT cognitive complexity
           return;
         }
 
+
         if (game.maps.at(game.current_map).can_enter_from(game, location, from)) {
           auto exit_action = game.maps.at(game.current_map).locations.at(last_location).exit_action;
           if (exit_action) { exit_action(game, last_location, from); }
 
           game.player.map_location = location;
 
+          spdlog::trace("Moved to: {}, {}", location.x, location.y);
+
           auto enter_action = game.maps.at(game.current_map).locations.at(location).enter_action;
           if (enter_action) { enter_action(game, location, from); }
         }
-      }
-    }();
+      }();
+    }
 
 
     draw(*bm, game);
@@ -173,7 +207,7 @@ void game_iteration_canvas()// NOLINT cognitive complexity
   auto container = ftxui::Container::Vertical({});
 
   auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &event) {
-    last_event = std::exchange(current_event, event);
+    events.push_back(event);
     return false;
   });
 
@@ -218,13 +252,24 @@ void game_iteration_canvas()// NOLINT cognitive complexity
            | ftxui::border;
   });
 
+  int selected_log_entry = 0;
+  auto log_menu = ftxui::Menu(&log_sink->event_log, &selected_log_entry);
+
+  auto log_renderer = ftxui::Renderer(ftxui::Container::Vertical({ log_menu, close_log }), [&] {
+    return ftxui::vbox({ log_menu->Render() | ftxui::vscroll_indicator | ftxui::frame
+                           | ftxui::size(ftxui::HEIGHT, ftxui::LESS_THAN, 15),// NOLINT magic numbers
+             close_log->Render() })
+           | ftxui::border;
+  });
 
   int depth = 0;
 
-  auto main_container = ftxui::Container::Tab({ game_renderer, menu_renderer, popup_renderer }, &depth);
+  auto main_container = ftxui::Container::Tab({ game_renderer, menu_renderer, popup_renderer, log_renderer }, &depth);
 
   auto main_renderer = ftxui::Renderer(main_container, [&] {
-    if (game.has_popup_message()) {
+    if (show_log) {
+      depth = 3;
+    } else if (game.has_popup_message()) {
       depth = 2;
     } else if (game.has_menu()) {
       depth = 1;
@@ -250,6 +295,10 @@ void game_iteration_canvas()// NOLINT cognitive complexity
       if (game.has_popup_message()) {
         document = ftxui::dbox({ document, popup_renderer->Render() | ftxui::clear_under | ftxui::center });
       }
+    }
+
+    if (depth > 2) {
+      document = ftxui::dbox({ document, log_renderer->Render() | ftxui::clear_under | ftxui::center });
     }
 
     return document;
@@ -289,6 +338,7 @@ int main(int argc, const char **argv)
           -h --help     Show this screen.
           --version     Show version.
 )";
+
 
     std::map<std::string, docopt::value> args = docopt::docopt(USAGE,
       { std::next(argv), std::next(argv, argc) },
