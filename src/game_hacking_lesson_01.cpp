@@ -1,13 +1,29 @@
-#include "game.hpp"
+#include <source_location>
+
 #include "bitmap.hpp"
 #include "game_components.hpp"
+#include "game_hacking_lesson_00.hpp"
 
 
-namespace lefticus::my_awesome_game {
+namespace lefticus::my_awesome_game::game_hacking::lesson_01 {
+
+bool button_pressed(const Game &game) { return get<bool>(game.variables.at("ButtonPressed")); }
+
+bool &button_pressed(Game &game) { return get<bool>(game.variables.at("ButtonPressed")); }
+
+
 Game_Map make_map()// NOLINT cognitive complexity
 {
   Game_Map map{ Size{ 10, 10 } };// NOLINT magic numbers
 
+  auto button_draw =
+    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
+      if (button_pressed(game)) {
+        fill(pixels, Color{ 45, 45, 45, 255 });// NOLINT magic number
+      } else {
+        fill(pixels, Color{ 15, 15, 15, 255 });// NOLINT magic number
+      }
+    };
 
   auto empty_draw =
     [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
@@ -80,29 +96,33 @@ Game_Map make_map()// NOLINT cognitive complexity
   map.locations.at(Point{ 5, 5 }) = Flashing_Tile;// NOLINT magic numbers
 
   map.locations.at(Point{ 2, 1 }).enter_action = [](Game &game, Point, Direction) {
-    game.last_message = "Hint: go to location {4,3}";
+    game.last_message = "A hidden space will activate a button! Go find it!";
   };
 
-  map.locations.at(Point{ 4, 3 }).enter_action = [](Game &game, Point, Direction) {
-    game.last_message = "Hint: go to location {8,8}";
-  };
+  map.locations.at(Point{ 5, 6 }).draw// NOLINT magic numbers
+    = button_draw;
 
-  map.locations.at(Point{ 7, 7 }).enter_action// NOLINT
-    = [](Game &game, Point, Direction) { game.last_message = "A wall is blocking your way"; };
-  map.locations.at(Point{ 8, 7 }).enter_action// NOLINT
-    = [](Game &game, Point, Direction) { game.last_message = "You need to remove the wall"; };
-  map.locations.at(Point{ 7, 8 }).enter_action// NOLINT
-    = [](Game &game, Point, Direction) { game.last_message = "Look for 'special_location' in the source code"; };
+  map.locations.at(Point{ 5, 6 }).enter_action// NOLINT magic numbers
+    = [](Game &game, Point, Direction) {
+        // TODO: Update this to use std::source_location once clang supports it
+        game.last_message =
+          fmt::format("You need to fix the \"ButtonPressed\" variable code! ({}:{})", __FILE__, __LINE__);
+        // `!` means "Not"
+        // so if you step on this tile then it will invert the state of the button
+        // from true to false and from false to true.
+        //
+        // At least...that's the idea. Problem is there's a typo. Do you see it?!
+        game.variables["BottonPressed"] = !std::get<bool>(game.variables["ButtonPressed"]);
+      };
+
 
   map.locations.at(special_location) = Flashing_Tile;
-  map.locations.at(special_location).can_enter = [](const Game &, Point, Direction direction) {
-    return direction == Direction::South || direction == Direction::East;
+  map.locations.at(special_location).can_enter = [](const Game &game, Point, [[maybe_unused]] Direction direction) {
+    return direction == Direction::West && button_pressed(game);
   };
 
-  map.locations.at(special_location).exit_action = [](Game &game, Point, Direction) { game.last_message = ""; };
-
   map.locations.at(special_location).enter_action = [](Game &game, Point, Direction) {
-    game.last_message = "You found the secret room!";
+    game.last_message = "You opened the door! Now change the call to `play_game` to start lesson 02";
     Menu menu;
     menu.items.push_back(
       Menu::MenuItem{ "Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); } });
@@ -115,7 +135,7 @@ Game_Map make_map()// NOLINT cognitive complexity
   return map;
 }
 
-Game make_game()
+Game make_lesson()
 {
   Game retval{};
   retval.maps.emplace("main", make_map());
@@ -124,6 +144,9 @@ Game make_game()
 
   retval.variables["Task"] = "Exit game";
   retval.display_variables.emplace_back("Task");
+
+  retval.variables["ButtonPressed"] = false;
+  retval.display_variables.emplace_back("ButtonPressed");
 
   Character player;
   player.map_location = { 1, 1 };
@@ -146,9 +169,9 @@ Game make_game()
   retval.player = player;
 
   retval.popup_message =
-    "Welcome to 'Learning C++ With Game Hacking!' Your job is to get into the special square in the bottom right "
-    "corner of the map. But to do that you'll need to modify the source code!";
+    "Welcome to 'Learning C++ With Game Hacking Lesson 01!' Your job is to get into the special square in the bottom "
+    "right corner of the map. But to do that you'll need to modify the source code!";
 
   return retval;
 }
-}// namespace lefticus::my_awesome_game
+}// namespace lefticus::my_awesome_game::game_hacking::lesson_01

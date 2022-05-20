@@ -57,7 +57,7 @@ struct Menu
   std::vector<MenuItem> items;
 };
 
-using Variable = std::variant<double, std::int64_t, std::string>;
+using Variable = std::variant<double, std::int64_t, std::string, bool>;
 
 inline std::string to_string(const Variable &variable)
 {

@@ -12,8 +12,9 @@
 
 #include "bitmap.hpp"
 #include "color.hpp"
-#include "game.hpp"
 #include "game_components.hpp"
+#include "game_hacking_lesson_00.hpp"
+#include "game_hacking_lesson_01.hpp"
 #include "point.hpp"
 #include "size.hpp"
 
@@ -106,16 +107,8 @@ protected:
   void flush_() override {}
 };
 
-void game_iteration_canvas()// NOLINT cognitive complexity
+void play_game(Game &game, std::shared_ptr<my_sink<std::mutex>> log_sink)// NOLINT cognitive complexity
 {
-  auto game = make_game();
-
-  // we want to take over as the main spdlog sink
-  auto log_sink = std::make_shared<my_sink<std::mutex>>();
-//  my_sink<std::mutex> log_sink;
-  auto logger = std::make_shared<spdlog::logger>("default", log_sink);
-  spdlog::set_default_logger(logger);
-  spdlog::set_level(spdlog::level::trace);
 
   Displayed_Menu current_menu{ Menu{}, game };
   bool show_log = false;
@@ -328,12 +321,12 @@ int main(int argc, const char **argv)
 {
   try {
     static constexpr auto USAGE =
-      R"(intro
+      R"(awesome_game
 
     Usage:
-          intro
-          intro (-h | --help)
-          intro --version
+          awesome_game
+          awesome_game (-h | --help)
+          awesome_game --version
  Options:
           -h --help     Show this screen.
           --version     Show version.
@@ -347,8 +340,14 @@ int main(int argc, const char **argv)
         my_awesome_game::cmake::project_name,
         my_awesome_game::cmake::project_version));// version string, acquired
                                                   // from config.hpp via CMake
+    // we want to take over as the main spdlog sink
+    auto log_sink = std::make_shared<lefticus::my_awesome_game::my_sink<std::mutex>>();
 
-    lefticus::my_awesome_game::game_iteration_canvas();
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
+    spdlog::set_level(spdlog::level::trace);
+
+    auto game = lefticus::my_awesome_game::game_hacking::lesson_00::make_lesson();
+    lefticus::my_awesome_game::play_game(game, log_sink);
 
     //    consequence_game();
   } catch (const std::exception &e) {
