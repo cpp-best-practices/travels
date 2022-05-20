@@ -1,18 +1,19 @@
-#include "game_hacking_lesson_00.hpp"
+#include "game_hacking_lesson_02.hpp"
 #include "bitmap.hpp"
 #include "game_components.hpp"
+#include <set>
 
+namespace lefticus::awesome_game::hacking::lesson_02 {
 
-namespace lefticus::awesome_game::hacking::lesson_00 {
 Game_Map make_map()// NOLINT cognitive complexity
 {
   Game_Map map{ Size{ 10, 10 } };// NOLINT magic numbers
 
+  auto colors_used = std::make_shared<std::set<Color>>();
 
   auto empty_draw =
     [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
-      // just a grey
-      fill(pixels, Color{ 25, 25, 25, 255 });// NOLINT magic number
+      fill(pixels, Color{ 5, 5, 25, 255 });// NOLINT magic number
     };
 
   auto cannot_enter = [](const Game &, Point, Direction) -> bool { return false; };
@@ -23,17 +24,32 @@ Game_Map make_map()// NOLINT cognitive complexity
     };
 
 
-  auto wall_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
+  auto wall_draw = [colors_used]([[maybe_unused]] Vector2D_Span<Color> &pixels,
                      [[maybe_unused]] const Game &game,
                      [[maybe_unused]] Point map_location) {
     static constexpr auto wall_color = Color{ 100, 100, 100, 128 };
 
-    // We fill in the wall with a color, the color alternates by the second
-    // game clock is milliseconds (1000 per second)
-    // divide by 1000 to get the current second, the % 2
-    // gives you the remainder of current second divided by 2.
-    // Result is that even numbered seconds have the first color
-    // and odd numbered seconds have the second color
+    // this gets the current second on the game's clock
+    // then, using `%` divides that by 2, and takes the remainder
+    // so if the current second count is even (evenly divisible by 2)
+    // then the first color is displayed.
+    // If it is odd (remainder of 1), then the second color is displayed.
+    //
+    // Your goal is to divide this into 3 options and display a 3rd
+    // color.
+    //
+    // Once you have displayed the 3rd color, the door in the
+    // bottom right will open!
+    //
+    // Some things to consider:
+    //   * instead of dividing by 2, you probably want to divide by 3 (or more)
+    //   * You'll need to add another case statement (what are the 3 possible remainders
+    //     if you divide by 3?)
+    //   * consider avoiding // NOLINT by actually naming your color!
+    //
+    // static constexpr auto MyPrettyBlue = Color{10,24, 200, 255}; // for example
+    //
+    // Also consider naming the other colors used!
     switch ((game.clock.count() / 1000) % 2) {// NOLINT magic number
     case 0:
       fill(pixels, Color{ 64, 128, 64, 255 });// NOLINT magic number
@@ -43,9 +59,9 @@ Game_Map make_map()// NOLINT cognitive complexity
       break;
     }
 
+    colors_used->insert(pixels.at(Point{ 3, 3 }));
 
-    // Fill each of the 4 walls with the wall color if the wall is closed.
-    // if the wall is open (can_enter_from) that direction, the do not draw the wall
+
     if (!game.maps.at(game.current_map).can_enter_from(game, map_location, Direction::East)) {
       fill_line(pixels,
         Point{ pixels.size().width - 1, 0 },
@@ -72,15 +88,11 @@ Game_Map make_map()// NOLINT cognitive complexity
   // be default everything is an empty, passable location
   fill(map.locations, Location{ {}, {}, empty_draw, {} });
 
-  // the entire border of the map is surrounded by water
   fill_border(map.locations, Location{ {}, {}, water_draw, cannot_enter });
-
 
   const auto Flashing_Tile = Location{ {}, {}, wall_draw, cannot_enter };
 
   constexpr static auto special_location = Point{ 8, 8 };
-
-  // Fill in the map locations with flashing tiles and hints
 
   map.locations.at(Point{ 3, 4 }) = Flashing_Tile;
   map.locations.at(Point{ 2, 5 }) = Flashing_Tile;// NOLINT magic numbers
@@ -88,47 +100,20 @@ Game_Map make_map()// NOLINT cognitive complexity
   map.locations.at(Point{ 8, 6 }) = Flashing_Tile;// NOLINT magic numbers
   map.locations.at(Point{ 5, 5 }) = Flashing_Tile;// NOLINT magic numbers
 
-  map.locations.at(Point{ 2, 1 }).enter_action = [](Game &game, Point, Direction) {
-    game.last_message = "Hint: you'll have to edit code. go to location {4,3}";
+  map.locations.at(Point{ 2, 1 }).enter_action = []([[maybe_unused]] Game &game, Point, Direction) {
   };
 
-  map.locations.at(Point{ 4, 3 }).enter_action = [](Game &game, Point, Direction) {
-    game.last_message = "Hint: You need file game_hacking_lesson_00.cpp. go to location {8,8}";
-  };
-
-  map.locations.at(Point{ 7, 7 }).enter_action// NOLINT
-    = [](Game &game, Point, Direction) { game.last_message = "A wall is blocking your way"; };
-  map.locations.at(Point{ 8, 7 }).enter_action// NOLINT
-    = [](Game &game, Point, Direction) { game.last_message = "You need to remove the wall"; };
-  map.locations.at(Point{ 7, 8 }).enter_action// NOLINT
-    = [](Game &game, Point, Direction) {
-        game.last_message = fmt::format("Look for 'special_location' ({}:{})", __FILE__, __LINE__);
-      };
 
   map.locations.at(special_location) = Flashing_Tile;
-  map.locations.at(special_location).can_enter = [](const Game &, Point, [[maybe_unused]] Direction direction) {
-    // || means "or"
-    // this means you can currently enter the code from either
-    // the South || (or) the East...
-    // but you need to be able to enter from the North or the West!
-    //
-    //        North
-    //         ---
-    //  West  |   |  East
-    //         ---
-    //        South
-    //
-    // Try changing the code below and see how the game changes
-    return direction == Direction::South || direction == Direction::East;
-  };
+  map.locations.at(special_location).can_enter =
+    [colors_used]([[maybe_unused]] const Game &game, Point, [[maybe_unused]] Direction direction) {
+      return colors_used->size() > 2;
+    };
 
   map.locations.at(special_location).enter_action = [](Game &game, Point, Direction) {
-    game.last_message = "You found the secret room! Now change the call to `play_game` to start lesson 01";
-    Menu menu;
-    menu.items.push_back(
-      Menu::MenuItem{ "Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); } });
-    menu.items.push_back(
-      Menu::MenuItem{ "Exit Game", [](Game &menu_action_game) { menu_action_game.exit_game = true; } });
+    game.last_message = "You opened the door! Now change the call to `play_game` to start lesson 03";
+    Menu menu{ { "Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); } },
+      { "Exit Game", [](Game &menu_action_game) { menu_action_game.exit_game = true; } } };
     game.set_menu(menu);
   };
 
@@ -146,12 +131,9 @@ Game make_lesson()
   retval.variables["Task"] = "Exit game";
   retval.display_variables.emplace_back("Task");
 
+
   Character player;
-
-  // player's starting map location is {1,1}
   player.map_location = { 1, 1 };
-
-  // Draw a circle-like thing for the player
   player.draw =
     [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
       for (std::size_t cur_x = 2; cur_x < pixels.size().width - 2; ++cur_x) {
@@ -159,9 +141,9 @@ Game make_lesson()
           if ((cur_x == 2 && cur_y == 2) || (cur_x == 2 && cur_y == pixels.size().height - 3)
               || (cur_x == pixels.size().width - 3 && cur_y == pixels.size().height - 3)
               || (cur_x == pixels.size().width - 3 && cur_y == 2)) {
-            pixels.at(Point{ cur_x, cur_y }) += Color{ 128, 128, 0, 64 };// NOLINT
+            pixels.at(Point{ cur_x, cur_y }) += Color{ 128, 128, 0, 64 };// NOLINT Magic Number
           } else {
-            pixels.at(Point{ cur_x, cur_y }) += Color{ 128, 128, 0, 255 };// NOLINT
+            pixels.at(Point{ cur_x, cur_y }) += Color{ 128, 128, 0, 255 };// NOLINT Magic Number
           }
         }
       }
@@ -171,13 +153,11 @@ Game make_lesson()
   retval.player = player;
 
   retval.popup_message =
-    "Welcome to 'Learning C++ With Game Hacking Lesson 00'\n\n"
-    "This lesson is to just get started with the project, but you will also learn some basic logic and how to get "
-    "around the source code.\n\n"
-    "Your job is to get into the special square in the bottom right corner of the map.\n\n"
-    "But to do that you'll need to modify the source code!\n"
-    "(Be sure to look for clues in the bottom message box :) )";
+    "Welcome to 'Learning C++ With Game Hacking Lesson 02'\n\n"
+    "Your job, again, is to get into the special square in the bottom right corner of the map, and you'll need to "
+    "modify the code.\n\n"
+    "We need to talk about 'magic numbers' in this code, but you'll have the fun of changing some colors!";
 
   return retval;
 }
-}// namespace lefticus::awesome_game::hacking::lesson_00
+}// namespace lefticus::awesome_game::hacking::lesson_02

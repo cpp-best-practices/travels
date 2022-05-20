@@ -2,7 +2,7 @@
 
 #include "bitmap.hpp"
 
-namespace lefticus::my_awesome_game {
+namespace lefticus::awesome_game {
 Vector2D<Color> load_png(const std::filesystem::path &filename)
 {
   std::vector<unsigned char> image;// the raw pixels

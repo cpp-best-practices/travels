@@ -15,6 +15,7 @@
 #include "game_components.hpp"
 #include "game_hacking_lesson_00.hpp"
 #include "game_hacking_lesson_01.hpp"
+#include "game_hacking_lesson_02.hpp"
 #include "point.hpp"
 #include "size.hpp"
 
@@ -24,7 +25,7 @@
 #include <internal_use_only/config.hpp>
 
 
-namespace lefticus::my_awesome_game {
+namespace lefticus::awesome_game {
 
 
 void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &map)
@@ -90,10 +91,10 @@ struct Displayed_Menu
 };
 
 
-template<typename Mutex> class my_sink : public spdlog::sinks::base_sink<Mutex>
+template<typename Mutex> class log_sink : public spdlog::sinks::base_sink<Mutex>
 {
 public:
-  my_sink() = default;
+  log_sink() = default;
   std::vector<std::string> event_log;
 
 protected:
@@ -107,7 +108,7 @@ protected:
   void flush_() override {}
 };
 
-void play_game(Game &game, std::shared_ptr<my_sink<std::mutex>> log_sink)// NOLINT cognitive complexity
+void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOLINT cognitive complexity
 {
 
   Displayed_Menu current_menu{ Menu{}, game };
@@ -241,8 +242,30 @@ void play_game(Game &game, std::shared_ptr<my_sink<std::mutex>> log_sink)// NOLI
     ftxui::Renderer(current_menu.buttons, [&] { return current_menu.buttons->Render() | ftxui::border; });
 
   auto popup_renderer = ftxui::Renderer(clear_popup_button, [&] {
-    return ftxui::vbox({ ftxui::paragraphAlignCenter(game.popup_message), clear_popup_button->Render() })
-           | ftxui::border;
+    ftxui::Elements paragraphs;
+
+    std::string paragraph;
+    for (const auto c : game.popup_message) {
+      if (c == '\n') {
+        if (paragraph.empty()) {
+          paragraphs.push_back(ftxui::separatorEmpty());
+        } else {
+          paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph));
+          paragraph.clear();
+        }
+      } else {
+        paragraph.push_back(c);
+      }
+    }
+
+    if (!paragraph.empty()) { paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph)); }
+
+    paragraphs.push_back(ftxui::separatorEmpty());
+
+    paragraphs.push_back(clear_popup_button->Render() | ftxui::center);
+
+
+    return ftxui::vbox(paragraphs) | ftxui::border;
   });
 
   int selected_log_entry = 0;
@@ -315,7 +338,7 @@ void play_game(Game &game, std::shared_ptr<my_sink<std::mutex>> log_sink)// NOLI
   refresh_ui_continue = false;
   refresh_ui.join();
 }
-}// namespace lefticus::my_awesome_game
+}// namespace lefticus::awesome_game
 
 int main(int argc, const char **argv)
 {
@@ -341,15 +364,13 @@ int main(int argc, const char **argv)
         my_awesome_game::cmake::project_version));// version string, acquired
                                                   // from config.hpp via CMake
     // we want to take over as the main spdlog sink
-    auto log_sink = std::make_shared<lefticus::my_awesome_game::my_sink<std::mutex>>();
+    auto log_sink = std::make_shared<lefticus::awesome_game::log_sink<std::mutex>>();
 
     spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
     spdlog::set_level(spdlog::level::trace);
 
-    auto game = lefticus::my_awesome_game::game_hacking::lesson_00::make_lesson();
-    lefticus::my_awesome_game::play_game(game, log_sink);
-
-    //    consequence_game();
+    auto game = lefticus::awesome_game::hacking::lesson_02::make_lesson();
+    lefticus::awesome_game::play_game(game, log_sink);
   } catch (const std::exception &e) {
     fmt::print("Unhandled exception in main: {}", e.what());
   }

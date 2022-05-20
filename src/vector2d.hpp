@@ -1,5 +1,5 @@
-#ifndef MY_AWESOME_GAME_VECTOR2D_HPP
-#define MY_AWESOME_GAME_VECTOR2D_HPP
+#ifndef AWESOME_GAME_VECTOR2D_HPP
+#define AWESOME_GAME_VECTOR2D_HPP
 
 #include <stdexcept>
 #include <vector>
@@ -8,7 +8,7 @@
 #include "size.hpp"
 
 
-namespace lefticus::my_awesome_game {
+namespace lefticus::awesome_game {
 
 
 template<typename Contained> class Vector2D
@@ -77,9 +77,7 @@ public:
 void fill(auto &vector2d, const auto &value)
 {
   for (std::size_t y = 0; y < vector2d.size().height; ++y) {
-    for (std::size_t x = 0; x < vector2d.size().width; ++x) {
-      vector2d.at(Point{x,y}) = value;
-    }
+    for (std::size_t x = 0; x < vector2d.size().width; ++x) { vector2d.at(Point{ x, y }) = value; }
   }
 }
 
@@ -88,8 +86,8 @@ void fill_border(auto &vector2d, const auto &value)
 {
   for (std::size_t y = 0; y < vector2d.size().height; ++y) {
     for (std::size_t x = 0; x < vector2d.size().width; ++x) {
-      if (y == 0 || x == 0 || x == vector2d.size().width - 1 || y == vector2d.size().height -1) {
-        vector2d.at({x,y}) = value;
+      if (y == 0 || x == 0 || x == vector2d.size().width - 1 || y == vector2d.size().height - 1) {
+        vector2d.at({ x, y }) = value;
       }
     }
   }
@@ -98,10 +96,10 @@ void fill_border(auto &vector2d, const auto &value)
 void fill_line(auto &vector2d, Point from, const Point to, const auto &value)
 {
   auto plot = [&](auto x, auto y) {
-    vector2d.at({static_cast<std::size_t>(x), static_cast<std::size_t>(y)}) = value;
+    vector2d.at({ static_cast<std::size_t>(x), static_cast<std::size_t>(y) }) = value;
   };
 
-  auto plotLine= [&plot](std::ptrdiff_t x0, std::ptrdiff_t y0, std::ptrdiff_t x1, std::ptrdiff_t y1) {
+  auto plotLine = [&plot](std::ptrdiff_t x0, std::ptrdiff_t y0, std::ptrdiff_t x1, std::ptrdiff_t y1) {
     auto dx = std::abs(x1 - x0);
     auto sx = x0 < x1 ? 1 : -1;
     auto dy = -std::abs(y1 - y0);
@@ -127,11 +125,13 @@ void fill_line(auto &vector2d, Point from, const Point to, const auto &value)
     }
   };
 
-  plotLine(static_cast<std::ptrdiff_t>(from.x), static_cast<std::ptrdiff_t>(from.y),
-    static_cast<std::ptrdiff_t>(to.x), static_cast<std::ptrdiff_t>(to.y));
+  plotLine(static_cast<std::ptrdiff_t>(from.x),
+    static_cast<std::ptrdiff_t>(from.y),
+    static_cast<std::ptrdiff_t>(to.x),
+    static_cast<std::ptrdiff_t>(to.y));
 }
 
 
-}// namespace lefticus::my_awesome_game
+}// namespace lefticus::awesome_game
 
-#endif// MY_AWESOME_GAME_VECTOR2D_HPP
+#endif// AWESOME_GAME_VECTOR2D_HPP

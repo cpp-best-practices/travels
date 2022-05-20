@@ -17,7 +17,10 @@ add_executable(
   game_hacking_lesson_00.cpp
   game_hacking_lesson_00.hpp
   game_hacking_lesson_01.cpp
-  game_hacking_lesson_01.hpp)
+  game_hacking_lesson_01.hpp
+  game_hacking_lesson_02.cpp
+  game_hacking_lesson_02.hpp
+)
 
 target_link_libraries(
   awesome_game

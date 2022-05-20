@@ -1,5 +1,5 @@
-#ifndef MY_AWESOME_GAME_GAME_COMPONENTS_HPP
-#define MY_AWESOME_GAME_GAME_COMPONENTS_HPP
+#ifndef AWESOME_GAME_GAME_COMPONENTS_HPP
+#define AWESOME_GAME_GAME_COMPONENTS_HPP
 
 #include <chrono>
 #include <functional>
@@ -10,7 +10,7 @@
 #include "color.hpp"
 #include "vector2d.hpp"
 
-namespace lefticus::my_awesome_game {
+namespace lefticus::awesome_game {
 
 struct Game;
 
@@ -55,6 +55,14 @@ struct Menu
   };
 
   std::vector<MenuItem> items;
+
+  Menu() = default;
+
+  explicit Menu(std::initializer_list<MenuItem> items_)
+    : items{items_}
+  {
+
+  }
 };
 
 using Variable = std::variant<double, std::int64_t, std::string, bool>;
@@ -118,4 +126,4 @@ private:
 
 }// namespace lefticus::my_awesome_game
 
-#endif// MY_AWESOME_GAME_GAME_COMPONENTS_HPP
+#endif// AWESOME_GAME_GAME_COMPONENTS_HPP

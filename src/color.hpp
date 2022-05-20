@@ -1,5 +1,5 @@
-#ifndef MY_AWESOME_GAME_COLOR_HPP
-#define MY_AWESOME_GAME_COLOR_HPP
+#ifndef AWESOME_GAME_COLOR_HPP
+#define AWESOME_GAME_COLOR_HPP
 
 #include <cmath>
 #include <cstdint>
@@ -8,7 +8,7 @@
 
 
 // Todo: move this into `tools` project?
-namespace lefticus::my_awesome_game {
+namespace lefticus::awesome_game {
 template<typename Type> struct Basic_Color;
 
 template<typename OutType, typename InType>
@@ -57,6 +57,7 @@ template<typename Type> struct Basic_Color
   Type B{};
   Type A{};
 
+  auto operator<=>(const Basic_Color &) const = default;
 
   template<typename RHS> constexpr auto &operator+=(Basic_Color<RHS> rhs) noexcept
   {
@@ -85,4 +86,4 @@ template<typename Type> struct Basic_Color
 using Color = Basic_Color<std::uint8_t>;
 }// namespace lefticus::my_awesome_game
 
-#endif// MY_AWESOME_GAME_COLOR_HPP
+#endif// AWESOME_GAME_COLOR_HPP

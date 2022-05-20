@@ -1,11 +1,9 @@
-#include <source_location>
-
+#include "game_hacking_lesson_01.hpp"
 #include "bitmap.hpp"
 #include "game_components.hpp"
-#include "game_hacking_lesson_00.hpp"
 
 
-namespace lefticus::my_awesome_game::game_hacking::lesson_01 {
+namespace lefticus::awesome_game::hacking::lesson_01 {
 
 bool button_pressed(const Game &game) { return get<bool>(game.variables.at("ButtonPressed")); }
 
@@ -19,8 +17,10 @@ Game_Map make_map()// NOLINT cognitive complexity
   auto button_draw =
     [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
       if (button_pressed(game)) {
+        // Light grey if button is pressed
         fill(pixels, Color{ 45, 45, 45, 255 });// NOLINT magic number
       } else {
+        // dark grey if button is not pressed
         fill(pixels, Color{ 15, 15, 15, 255 });// NOLINT magic number
       }
     };
@@ -32,10 +32,10 @@ Game_Map make_map()// NOLINT cognitive complexity
 
   auto cannot_enter = [](const Game &, Point, Direction) -> bool { return false; };
 
-  auto water = [](
-                 Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
-    fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
-  };
+  auto water_draw =
+    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
+      fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
+    };
 
 
   auto wall_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
@@ -77,13 +77,10 @@ Game_Map make_map()// NOLINT cognitive complexity
     }
   };
 
-  for (std::size_t cur_x = 0; cur_x < map.locations.size().width; ++cur_x) {
-    for (std::size_t cur_y = 0; cur_y < map.locations.size().height; ++cur_y) {
-      map.locations.at(Point{ cur_x, cur_y }).draw = empty_draw;
-    }
-  }
+  // be default everything is an empty, passable location
+  fill(map.locations, Location{ {}, {}, empty_draw, {} });
 
-  fill_border(map.locations, Location{ {}, {}, water, cannot_enter });
+  fill_border(map.locations, Location{ {}, {}, water_draw, cannot_enter });
 
   const auto Flashing_Tile = Location{ {}, {}, wall_draw, cannot_enter };
 
@@ -111,6 +108,8 @@ Game_Map make_map()// NOLINT cognitive complexity
         // so if you step on this tile then it will invert the state of the button
         // from true to false and from false to true.
         //
+        // don't get too hung up on this weird `std::get<bool>` thing yet!
+        //
         // At least...that's the idea. Problem is there's a typo. Do you see it?!
         game.variables["BottonPressed"] = !std::get<bool>(game.variables["ButtonPressed"]);
       };
@@ -123,11 +122,8 @@ Game_Map make_map()// NOLINT cognitive complexity
 
   map.locations.at(special_location).enter_action = [](Game &game, Point, Direction) {
     game.last_message = "You opened the door! Now change the call to `play_game` to start lesson 02";
-    Menu menu;
-    menu.items.push_back(
-      Menu::MenuItem{ "Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); } });
-    menu.items.push_back(
-      Menu::MenuItem{ "Exit Game", [](Game &menu_action_game) { menu_action_game.exit_game = true; } });
+    Menu menu{ { "Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); } },
+      { "Exit Game", [](Game &menu_action_game) { menu_action_game.exit_game = true; } } };
     game.set_menu(menu);
   };
 
@@ -157,9 +153,9 @@ Game make_lesson()
           if ((cur_x == 2 && cur_y == 2) || (cur_x == 2 && cur_y == pixels.size().height - 3)
               || (cur_x == pixels.size().width - 3 && cur_y == pixels.size().height - 3)
               || (cur_x == pixels.size().width - 3 && cur_y == 2)) {
-            pixels.at(Point{ cur_x, cur_y }) += Color{ 128, 128, 0, 64 };// NOLINT
+            pixels.at(Point{ cur_x, cur_y }) += Color{ 128, 128, 0, 64 };// NOLINT Magic Number
           } else {
-            pixels.at(Point{ cur_x, cur_y }) += Color{ 128, 128, 0, 255 };// NOLINT
+            pixels.at(Point{ cur_x, cur_y }) += Color{ 128, 128, 0, 255 };// NOLINT Magic Number
           }
         }
       }
@@ -169,9 +165,11 @@ Game make_lesson()
   retval.player = player;
 
   retval.popup_message =
-    "Welcome to 'Learning C++ With Game Hacking Lesson 01!' Your job is to get into the special square in the bottom "
-    "right corner of the map. But to do that you'll need to modify the source code!";
+    "Welcome to 'Learning C++ With Game Hacking Lesson 01'\n\n"
+    "Your job, again, is to get into the special square in the bottom right corner of the map, and you'll need to "
+    "modify the code.\n\n"
+    "There is a hidden button, but it's currently broken :(. Fortunately there are clues again.";
 
   return retval;
 }
-}// namespace lefticus::my_awesome_game::game_hacking::lesson_01
+}// namespace lefticus::awesome_game::hacking::lesson_01

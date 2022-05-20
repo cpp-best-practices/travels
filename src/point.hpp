@@ -1,9 +1,9 @@
-#ifndef MY_AWESOME_GAME_POINT_HPP
-#define MY_AWESOME_GAME_POINT_HPP
+#ifndef AWESOME_GAME_POINT_HPP
+#define AWESOME_GAME_POINT_HPP
 
 #include <cstdint>
 
-namespace lefticus::my_awesome_game {
+namespace lefticus::awesome_game {
 struct Point
 {
   std::size_t x;
@@ -19,6 +19,6 @@ struct Point
     return Point{ lhs.x - rhs.x, lhs.y - rhs.y };
   }
 };
-}// namespace lefticus::my_awesome_game
+}// namespace lefticus::awesome_game
 
-#endif// MY_AWESOME_GAME_POINT_HPP
+#endif// AWESOME_GAME_POINT_HPP

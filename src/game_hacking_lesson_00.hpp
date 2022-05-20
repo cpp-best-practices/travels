@@ -1,14 +1,13 @@
-#ifndef MY_AWESOME_GAME_GAME_HACKING_LESSON_00_HPP
-#define MY_AWESOME_GAME_GAME_HACKING_LESSON_00_HPP
+#ifndef AWESOME_GAME_GAME_HACKING_LESSON_00_HPP
+#define AWESOME_GAME_GAME_HACKING_LESSON_00_HPP
 
-namespace lefticus::my_awesome_game {
+namespace lefticus::awesome_game {
 struct Game;
 
-namespace game_hacking::lesson_00 {
+namespace hacking::lesson_00 {
   Game make_lesson();
 }
-}
+}// namespace lefticus::awesome_game
 
 
-
-#endif// MY_AWESOME_GAME_GAME_HACKING_LESSON_00_HPP
+#endif// AWESOME_GAME_GAME_HACKING_LESSON_00_HPP
