@@ -2,6 +2,7 @@ find_package(fmt CONFIG)
 find_package(spdlog CONFIG)
 find_package(docopt CONFIG)
 find_package(lodepng CONFIG)
+find_package(nlohmann_json CONFIG)
 
 # Generic test that uses conan libs
 add_executable(
@@ -13,6 +14,8 @@ add_executable(
   vector2d.hpp
   bitmap.hpp
   bitmap.cpp
+  game.cpp
+  game.hpp
   game_components.hpp
   game_hacking_lesson_00.cpp
   game_hacking_lesson_00.hpp
@@ -20,7 +23,8 @@ add_executable(
   game_hacking_lesson_01.hpp
   game_hacking_lesson_02.cpp
   game_hacking_lesson_02.hpp
-)
+        tile_set.hpp
+  game_components.cpp)
 
 target_link_libraries(
   awesome_game
@@ -29,7 +33,8 @@ target_link_libraries(
           docopt::docopt
           fmt::fmt
           spdlog::spdlog
-          lodepng::lodepng)
+          lodepng::lodepng
+          nlohmann_json::nlohmann_json)
 
 target_link_system_libraries(
   awesome_game

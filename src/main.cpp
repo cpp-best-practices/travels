@@ -12,6 +12,7 @@
 
 #include "bitmap.hpp"
 #include "color.hpp"
+#include "game.hpp"
 #include "game_components.hpp"
 #include "game_hacking_lesson_00.hpp"
 #include "game_hacking_lesson_01.hpp"
@@ -52,7 +53,7 @@ void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &
       auto span = Vector2D_Span<Color>(
         Point{ cur_x * game.tile_size.width, cur_y * game.tile_size.width }, game.tile_size, viewport.pixels);
       const auto map_location = Point{ cur_x, cur_y } + upper_left_map_location;
-      map.locations.at(map_location).draw(span, game, map_location);
+      map.locations.at(map_location).draw(span, game, map_location, Layer::Background);
     }
   }
 
@@ -64,6 +65,16 @@ void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &
   auto character_span = Vector2D_Span<Color>(character_location, game.tile_size, viewport.pixels);
 
   game.player.draw(character_span, game, game.player.map_location);
+
+
+  for (std::size_t cur_x = 0; cur_x < num_wide; ++cur_x) {
+    for (std::size_t cur_y = 0; cur_y < num_high; ++cur_y) {
+      auto span = Vector2D_Span<Color>(
+        Point{ cur_x * game.tile_size.width, cur_y * game.tile_size.width }, game.tile_size, viewport.pixels);
+      const auto map_location = Point{ cur_x, cur_y } + upper_left_map_location;
+      map.locations.at(map_location).draw(span, game, map_location, Layer::Foreground);
+    }
+  }
 }
 
 void draw(Bitmap &viewport, const Game &game)
@@ -215,7 +226,19 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
     if (game.exit_game) { screen.ExitLoopClosure()(); }
 
     // we will dispatch to the game_iteration function, where the work happens
-    game_iteration(new_time - last_time);
+    try {
+      game_iteration(new_time - last_time);
+    } catch (const std::exception &exception) {
+      const auto message =
+        fmt::format("Unhandled std::exception in game_iteration:\n\n{}", exception.what());
+      game.popup_message = message;
+      spdlog::critical(message);
+    } catch (...) {
+      constexpr static std::string_view message = "Unhandled unknown exception in game_iteration";
+      game.popup_message = message;
+      spdlog::critical(message);
+    }
+
     last_time = new_time;
 
 
@@ -354,7 +377,7 @@ int main(int argc, const char **argv)
           -h --help     Show this screen.
           --version     Show version.
 )";
-
+    spdlog::set_level(spdlog::level::trace);
 
     std::map<std::string, docopt::value> args = docopt::docopt(USAGE,
       { std::next(argv), std::next(argv, argc) },
@@ -363,13 +386,15 @@ int main(int argc, const char **argv)
         my_awesome_game::cmake::project_name,
         my_awesome_game::cmake::project_version));// version string, acquired
                                                   // from config.hpp via CMake
+
+    auto game = lefticus::awesome_game::make_game();
+
     // we want to take over as the main spdlog sink
     auto log_sink = std::make_shared<lefticus::awesome_game::log_sink<std::mutex>>();
 
     spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
-    spdlog::set_level(spdlog::level::trace);
 
-    auto game = lefticus::awesome_game::hacking::lesson_02::make_lesson();
+    spdlog::set_level(spdlog::level::trace);
     lefticus::awesome_game::play_game(game, log_sink);
   } catch (const std::exception &e) {
     fmt::print("Unhandled exception in main: {}", e.what());

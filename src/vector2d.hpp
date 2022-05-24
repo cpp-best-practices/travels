@@ -1,6 +1,7 @@
 #ifndef AWESOME_GAME_VECTOR2D_HPP
 #define AWESOME_GAME_VECTOR2D_HPP
 
+#include <fmt/format.h>
 #include <stdexcept>
 #include <vector>
 
@@ -19,7 +20,10 @@ template<typename Contained> class Vector2D
 
   void validate_position(const Point point) const
   {
-    if (point.x >= size_.width || point.y >= size_.height) { throw std::range_error("index out of range"); }
+    if (point.x >= size_.width || point.y >= size_.height) {
+      throw std::range_error(fmt::format(
+        "index out of range, got: ({},{}), allowed ({}, {})", point.x, point.y, size_.width - 1, size_.height - 1));
+    }
   }
 
 
@@ -46,10 +50,13 @@ template<typename Contained> class Vector2D_Span
   Point origin_;
   Size size_;
 
-  std::reference_wrapper<Vector2D<Contained>> data_;
+  using reference_type =
+    std::conditional_t<std::is_const_v<Contained>, const Vector2D<std::remove_const_t<Contained>>, Vector2D<Contained>>;
+
+  std::reference_wrapper<reference_type> data_;
 
 public:
-  Vector2D_Span(const Point origin, const Size size, Vector2D<Contained> &data)
+  Vector2D_Span(const Point origin, const Size size, reference_type &data)
     : origin_{ origin }, size_{ size }, data_{ data }
   {}
 

@@ -1,0 +1,72 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "tiles/Map.tmj",
+    "expandedProjectPaths": [
+        "tiles"
+    ],
+    "fileStates": {
+        "tiles/8x8 fantasytiles.tsj": {
+            "scaleInDock": 3,
+            "scaleInEditor": 5.5
+        },
+        "tiles/8x8 fantasytiles.tsx": {
+            "scaleInDock": 3,
+            "scaleInEditor": 5.5
+        },
+        "tiles/Map.tmj": {
+            "scale": 4,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 113.75,
+                "y": 111
+            }
+        },
+        "tiles/Map.tmx": {
+            "scale": 3,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 118.33333333333334,
+                "y": 80.16666666666666
+            }
+        },
+        "tiles/Store.tmj": {
+            "scale": 12.904166666666667,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 28.052954472069743,
+                "y": 32.00516628995803
+            }
+        }
+    },
+    "last.exportedFilePath": "C:/Users/Jason/Desktop",
+    "last.imagePath": "C:/Users/Jason/Desktop/tiled/tiles",
+    "last.worldFilePath": "C:/Users/Jason/Desktop",
+    "loadedWorlds": [
+    ],
+    "map.height": 8,
+    "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
+    "map.lastUsedFormat": "json",
+    "map.tileHeight": 8,
+    "map.tileWidth": 8,
+    "map.width": 8,
+    "openFiles": [
+        "tiles/8x8 fantasytiles.tsj",
+        "tiles/Map.tmj"
+    ],
+    "project": "maps.tiled-project",
+    "property.type": "bool",
+    "recentFiles": [
+        "tiles/8x8 fantasytiles.tsj",
+        "tiles/Map.tmj",
+        "tiles/Map.tmx",
+        "tiles/8x8 fantasytiles.tsx"
+    ],
+    "tileset.lastUsedFormat": "json",
+    "tileset.tileSize": {
+        "height": 8,
+        "width": 8
+    }
+}

@@ -18,6 +18,9 @@ struct Point
   {
     return Point{ lhs.x - rhs.x, lhs.y - rhs.y };
   }
+
+
+  friend auto operator<=>(const Point &, const Point &) = default;
 };
 }// namespace lefticus::awesome_game
 

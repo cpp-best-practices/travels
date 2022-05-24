@@ -2,6 +2,8 @@
 #define AWESOME_GAME_GAME_COMPONENTS_HPP
 
 #include <chrono>
+#include <filesystem>
+#include <fmt/format.h>
 #include <functional>
 #include <map>
 #include <optional>
@@ -9,18 +11,20 @@
 
 #include "color.hpp"
 #include "vector2d.hpp"
+#include "tile_set.hpp"
 
 namespace lefticus::awesome_game {
 
 struct Game;
 
 enum struct Direction { North, South, East, West };
+enum struct Layer { Background, Foreground };
 
 struct Location
 {
   std::function<void(Game &, Point, Direction)> enter_action;
   std::function<void(Game &, Point, Direction)> exit_action;
-  std::function<void(Vector2D_Span<Color> &, const Game &, Point)> draw;
+  std::function<void(Vector2D_Span<Color> &, const Game &, Point, Layer)> draw;
   std::function<bool(const Game &, Point, Direction)> can_enter;
 };
 
@@ -35,6 +39,9 @@ struct Game_Map
 {
   explicit Game_Map(const Size size) : locations{ size } {}
   Vector2D<Location> locations;
+
+  std::vector<Tile_Set> tile_sets;
+
   [[nodiscard]] bool can_enter_from(const Game &game, Point location, Direction from) const
   {
     const auto &map_location = locations.at(location);
@@ -45,6 +52,8 @@ struct Game_Map
     }
   }
 };
+
+Game_Map load_tiled_map(const std::filesystem::path &map_json);
 
 struct Menu
 {
@@ -58,11 +67,7 @@ struct Menu
 
   Menu() = default;
 
-  explicit Menu(std::initializer_list<MenuItem> items_)
-    : items{items_}
-  {
-
-  }
+  explicit Menu(std::initializer_list<MenuItem> items_) : items{ items_ } {}
 };
 
 using Variable = std::variant<double, std::int64_t, std::string, bool>;
@@ -90,6 +95,9 @@ struct Game
 
 
   bool exit_game = false;
+
+  [[nodiscard]] Game_Map &get_current_map() { return maps.at(current_map); }
+  [[nodiscard]] const Game_Map &get_current_map() const { return maps.at(current_map); }
 
   [[nodiscard]] bool has_popup_message() const { return !popup_message.empty(); }
 
@@ -124,6 +132,6 @@ private:
   bool menu_is_new = false;
 };
 
-}// namespace lefticus::my_awesome_game
+}// namespace lefticus::awesome_game
 
 #endif// AWESOME_GAME_GAME_COMPONENTS_HPP

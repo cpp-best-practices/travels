@@ -12,21 +12,24 @@ Game_Map make_map()// NOLINT cognitive complexity
   auto colors_used = std::make_shared<std::set<Color>>();
 
   auto empty_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
+    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
+      if (layer == Layer::Foreground) { return; }
       fill(pixels, Color{ 5, 5, 25, 255 });// NOLINT magic number
     };
 
   auto cannot_enter = [](const Game &, Point, Direction) -> bool { return false; };
 
   auto water_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
+    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
+    if (layer == Layer::Foreground) { return; }
       fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
     };
 
 
   auto wall_draw = [colors_used]([[maybe_unused]] Vector2D_Span<Color> &pixels,
                      [[maybe_unused]] const Game &game,
-                     [[maybe_unused]] Point map_location) {
+                     [[maybe_unused]] Point map_location, Layer layer) {
+    if (layer == Layer::Foreground) { return; }
     static constexpr auto wall_color = Color{ 100, 100, 100, 128 };
 
     // this gets the current second on the game's clock
@@ -100,9 +103,17 @@ Game_Map make_map()// NOLINT cognitive complexity
   map.locations.at(Point{ 8, 6 }) = Flashing_Tile;// NOLINT magic numbers
   map.locations.at(Point{ 5, 5 }) = Flashing_Tile;// NOLINT magic numbers
 
-  map.locations.at(Point{ 2, 1 }).enter_action = []([[maybe_unused]] Game &game, Point, Direction) {
+  map.locations.at(Point{ 2, 1 }).enter_action = [](Game &game, Point, Direction) {
+    game.last_message = "What is a Magic Number? {2,3}";
   };
 
+  map.locations.at(Point{ 2, 3 }).enter_action = [](Game &game, Point, Direction) {
+    game.last_message = "Magic Number?  https://en.wikipedia.org/wiki/Magic_number_(programming) {4, 3}";
+  };
+
+  map.locations.at(Point{ 4, 3 }).enter_action = [](Game &game, Point, Direction) {
+    game.last_message = "It's a hard coded constant. This is generally a 'Code Smell'";
+  };
 
   map.locations.at(special_location) = Flashing_Tile;
   map.locations.at(special_location).can_enter =
