@@ -180,75 +180,75 @@ private:
 
 template<typename Value> auto operator==(variable var, Value value)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return game.variables.at(name) == value; } };
 }
 
 template<typename Value> auto operator==(Value value, variable var)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return value == game.variables.at(name); } };
 }
 
 
 template<typename Value> auto operator!=(variable var, Value value)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return game.variables.at(name) != value; } };
 }
 
 template<typename Value> auto operator!=(Value value, variable var)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return value != game.variables.at(name); } };
 }
 
 template<typename Value> auto operator<(variable var, Value value)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return game.variables.at(name) < value; } };
 }
 
 template<typename Value> auto operator<(Value value, variable var)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return value < game.variables.at(name); } };
 }
 
 
 template<typename Value> auto operator<=(variable var, Value value)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return game.variables.at(name) <= value; } };
 }
 
 template<typename Value> auto operator<=(Value value, variable var)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return value <= game.variables.at(name); } };
 }
 
 template<typename Value> auto operator>(variable var, Value value)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return game.variables.at(name) > value; } };
 }
 
 template<typename Value> auto operator>(Value value, variable var)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return value > game.variables.at(name); } };
 }
 
 template<typename Value> auto operator>=(variable var, Value value)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return game.variables.at(name) >= value; } };
 }
 
 template<typename Value> auto operator>=(Value value, variable var)
 {
-  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+  return Variable_Comparison{ [name = std::move(var).name, value = Variable{ std::move(value) }](
                                 const Game &game) { return value >= game.variables.at(name); } };
 }
 

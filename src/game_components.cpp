@@ -134,7 +134,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cofnitiv
 
     map.locations.at(point).can_enter = [tiles = tile_data](const Game &game, Point, Direction) {
       const auto &tile_sets = game.get_current_map().tile_sets;
-      return std::ranges::all_of(tiles, [&](const auto &tile) {
+      return std::all_of(tiles.begin(), tiles.end(), [&](const auto &tile) {
         return tile.foreground || tile.background || tile.tileid == 0
                || tile_sets[0].properties.at(tile.tileid).passable;
       });
