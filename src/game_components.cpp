@@ -106,7 +106,8 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cofnitiv
 
 
   for (const auto &[point, tile_data] : points) {
-    map.locations.at(point).draw = [tiles = tile_data](Vector2D_Span<Color> &pixels, const Game &game, Point, Layer layer) {
+    map.locations.at(point).draw = [tiles = tile_data](
+                                     Vector2D_Span<Color> &pixels, const Game &game, Point, Layer layer) {
       const auto &tile_sets = game.get_current_map().tile_sets;
       bool first_tile = true;
       for (const auto &tile : tiles) {
@@ -134,11 +135,48 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cofnitiv
     map.locations.at(point).can_enter = [tiles = tile_data](const Game &game, Point, Direction) {
       const auto &tile_sets = game.get_current_map().tile_sets;
       return std::ranges::all_of(tiles, [&](const auto &tile) {
-        return tile.foreground || tile.background || tile.tileid == 0 || tile_sets[0].properties.at(tile.tileid).passable;
+        return tile.foreground || tile.background || tile.tileid == 0
+               || tile_sets[0].properties.at(tile.tileid).passable;
       });
     };
   }
 
   return map;
 }
+
+Menu::MenuItem::MenuItem(std::string text_,
+  std::function<void(Game &)> action_,
+  std::function<bool(const Game &)> visible_)
+  : text{ std::move(text_) }, action{ std::move(action_) }, visible{ std::move(visible_) }
+{}
+
+Menu::MenuItem::MenuItem(std::string text_, std::string message_, std::function<bool(const Game &)> visible_)
+  : MenuItem(
+    std::move(text_),
+    [message = std::move(message_)](Game &game) { game.popup_message = message; },
+    std::move(visible_))
+{}
+
+Menu::MenuItem exit_menu()
+{
+  return { "Exit", [](Game &game) { game.clear_menu(); } };
+}
+
+Menu::MenuItem set_flag(std::string text, std::string message, variable var)
+{
+  return { std::move(text), [message = std::move(message), var = std::move(var)](Game &game) {
+            game.popup_message = message;
+            if (game.variables[var.name] != Variable{ true }) {
+              game.variables[var.name] = true;
+              game.set_menu(game.get_menu());
+            }
+          } };
+}
+
+Menu::MenuItem check_flag(std::string text, std::string message, variable var)
+{
+  return { std::move(text), std::move(message), std::move(var) == true };
+}
+
+
 }// namespace lefticus::awesome_game

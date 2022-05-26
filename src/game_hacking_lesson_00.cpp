@@ -9,32 +9,32 @@ Game_Map make_map()// NOLINT cognitive complexity
   Game_Map map{ Size{ 10, 10 } };// NOLINT magic numbers
 
 
-  auto empty_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
-      if (layer == Layer::Foreground) {
-        return;
-      }
-      // just a grey
-      fill(pixels, Color{ 25, 25, 25, 255 });// NOLINT magic number
-    };
+  auto empty_draw = [](Vector2D_Span<Color> &pixels,
+                      [[maybe_unused]] const Game &game,
+                      [[maybe_unused]] Point map_location,
+                      Layer layer) {
+    if (layer == Layer::Foreground) { return; }
+    // just a grey
+    fill(pixels, Color{ 25, 25, 25, 255 });// NOLINT magic number
+  };
 
   auto cannot_enter = [](const Game &, Point, Direction) -> bool { return false; };
 
-  auto water_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
-      if (layer == Layer::Foreground) { return; }
-      fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
-    };
+  auto water_draw = [](Vector2D_Span<Color> &pixels,
+                      [[maybe_unused]] const Game &game,
+                      [[maybe_unused]] Point map_location,
+                      Layer layer) {
+    if (layer == Layer::Foreground) { return; }
+    fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
+  };
 
 
   auto wall_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
                      [[maybe_unused]] const Game &game,
                      [[maybe_unused]] Point map_location,
                      Layer layer) {
-    if (layer == Layer::Foreground) {
-      return;
-    }
-    
+    if (layer == Layer::Foreground) { return; }
+
     static constexpr auto wall_color = Color{ 100, 100, 100, 128 };
 
     // We fill in the wall with a color, the color alternates by the second
@@ -134,10 +134,8 @@ Game_Map make_map()// NOLINT cognitive complexity
   map.locations.at(special_location).enter_action = [](Game &game, Point, Direction) {
     game.last_message = "You found the secret room! Now change the call to `play_game` to start lesson 01";
     Menu menu;
-    menu.items.push_back(
-      Menu::MenuItem{ "Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); } });
-    menu.items.push_back(
-      Menu::MenuItem{ "Exit Game", [](Game &menu_action_game) { menu_action_game.exit_game = true; } });
+    menu.items.emplace_back("Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); });
+    menu.items.emplace_back("Exit Game", [](Game &menu_action_game) { menu_action_game.exit_game = true; });
     game.set_menu(menu);
   };
 

@@ -55,12 +55,65 @@ struct Game_Map
 
 Game_Map load_tiled_map(const std::filesystem::path &map_json);
 
+
+using Variable = std::variant<double, std::int64_t, std::string, bool>;
+
+template<typename Comparitor> struct Variable_Comparison
+{
+  Comparitor comparitor;
+
+  bool operator()(const Game &game) const { return comparitor(game); }
+};
+
+template<typename T> Variable_Comparison(T t) -> Variable_Comparison<T>;
+
+
+template<typename LHS, typename RHS> auto operator&&(Variable_Comparison<LHS> lhs, Variable_Comparison<RHS> rhs)
+{
+  return Variable_Comparison{ [lhs = std::move(lhs.comparitor), rhs = std::move(rhs.comparitor)](
+                                const Game &game) { return lhs(game) && rhs(game); } };
+}
+
+template<typename LHS, typename RHS> auto operator||(Variable_Comparison<LHS> lhs, Variable_Comparison<RHS> rhs)
+{
+  return Variable_Comparison{ [lhs = std::move(lhs.comparitor), rhs = std::move(rhs.comparitor)](
+                                const Game &game) { return lhs(game) || rhs(game); } };
+}
+
+struct variable
+{
+  std::string name;
+};
+
+
+
+
+inline std::string to_string(const Variable &variable)
+{
+  return std::visit([](const auto &value) { return fmt::format("{}", value); }, variable);
+}
+
 struct Menu
 {
   struct MenuItem
   {
     std::string text;
     std::function<void(Game &)> action;
+    std::function<bool(const Game &)> visible;
+    MenuItem(std::string text_, std::string message_, std::function<bool (const Game &)> = {});
+
+    template<typename Compare>
+    MenuItem(std::string text_, std::string message_, Variable_Comparison<Compare> comp)
+     : MenuItem(std::move(text_), std::move(message_), std::function<bool(const Game &)>(std::move(comp.comparitor)))
+    {
+    }
+
+    MenuItem(std::string text_, std::function<void(Game &)> action_, std::function<bool (const Game &)> visible_ = {});
+    
+    template<typename Compare>
+    MenuItem(std::string text_, std::function<void(Game &)> action_, Variable_Comparison<Compare> comp)
+      : MenuItem(std::move(text_), std::move(action_), std::function<bool(const Game &)>(std::move(comp.comparitor)))
+    {}
   };
 
   std::vector<MenuItem> items;
@@ -69,13 +122,6 @@ struct Menu
 
   explicit Menu(std::initializer_list<MenuItem> items_) : items{ items_ } {}
 };
-
-using Variable = std::variant<double, std::int64_t, std::string, bool>;
-
-inline std::string to_string(const Variable &variable)
-{
-  return std::visit([](const auto &value) { return fmt::format("{}", value); }, variable);
-}
 
 struct Game
 {
@@ -131,6 +177,84 @@ private:
   std::optional<Menu> menu;
   bool menu_is_new = false;
 };
+
+template<typename Value> auto operator==(variable var, Value value)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return game.variables.at(name) == value; } };
+}
+
+template<typename Value> auto operator==(Value value, variable var)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return value == game.variables.at(name); } };
+}
+
+
+template<typename Value> auto operator!=(variable var, Value value)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return game.variables.at(name) != value; } };
+}
+
+template<typename Value> auto operator!=(Value value, variable var)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return value != game.variables.at(name); } };
+}
+
+template<typename Value> auto operator<(variable var, Value value)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return game.variables.at(name) < value; } };
+}
+
+template<typename Value> auto operator<(Value value, variable var)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return value < game.variables.at(name); } };
+}
+
+
+template<typename Value> auto operator<=(variable var, Value value)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return game.variables.at(name) <= value; } };
+}
+
+template<typename Value> auto operator<=(Value value, variable var)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return value <= game.variables.at(name); } };
+}
+
+template<typename Value> auto operator>(variable var, Value value)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return game.variables.at(name) > value; } };
+}
+
+template<typename Value> auto operator>(Value value, variable var)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return value > game.variables.at(name); } };
+}
+
+template<typename Value> auto operator>=(variable var, Value value)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return game.variables.at(name) >= value; } };
+}
+
+template<typename Value> auto operator>=(Value value, variable var)
+{
+  return Variable_Comparison{ [name = std::move(var.name), value = Variable{ std::move(value) }](
+                                const Game &game) { return value >= game.variables.at(name); } };
+}
+
+Menu::MenuItem exit_menu();
+Menu::MenuItem set_flag(std::string text, std::string message, variable var);
+Menu::MenuItem check_flag(std::string text, std::string message, variable var);
 
 }// namespace lefticus::awesome_game
 

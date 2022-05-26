@@ -90,9 +90,12 @@ struct Displayed_Menu
   {
     ftxui::Components menu_lines;
 
-    std::ranges::transform(menu.items, std::back_inserter(menu_lines), [&game](auto &item) {
-      return ftxui::Button(item.text, [&game, &item]() { item.action(game); });
-    });
+    for (const auto &item : menu.items)
+    {
+      if (!item.visible || item.visible(game)) {
+        menu_lines.push_back(ftxui::Button(item.text, [&game, &item]() { item.action(game); }, ftxui::ButtonOption{false}));
+      }
+    }
 
     buttons = ftxui::Container::Vertical(menu_lines);
   }
