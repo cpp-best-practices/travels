@@ -9,7 +9,7 @@
 #endif
 #include <spdlog/spdlog.h>
 #ifdef _MSC_VER
-#pragma warning(default: 4189)
+#pragma warning(default : 4189)
 #endif
 
 namespace lefticus::awesome_game {
