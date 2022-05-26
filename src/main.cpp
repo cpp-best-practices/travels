@@ -84,16 +84,39 @@ void draw(Bitmap &viewport, const Game &game)
   }
 }
 
+ftxui::ButtonOption Animated(ftxui::Color background, // NOLINT
+  ftxui::Color foreground,  // NOLINT
+  ftxui::Color background_active, // NOLINT
+  ftxui::Color foreground_active) // NOLINT
+{
+  ftxui::ButtonOption option;
+  option.transform = [](const ftxui::EntryState &s) {
+    auto element = ftxui::text(s.label);
+    if (s.focused) { element |= ftxui::bold; }
+    return element;
+  };
+  option.animated_colors.foreground.Set(foreground, foreground_active);
+  option.animated_colors.background.Set(background, background_active);
+  return option;
+}
+
+ftxui::ButtonOption Animated()
+{
+  return Animated(ftxui::Color::Black,
+    ftxui::Color::GrayLight,//
+    ftxui::Color::GrayDark,
+    ftxui::Color::White);
+}
 struct Displayed_Menu
 {
   Displayed_Menu(Menu menu_, Game &game) : menu{ std::move(menu_) }
   {
     ftxui::Components menu_lines;
 
-    for (const auto &item : menu.items)
-    {
+    for (const auto &item : menu.items) {
       if (!item.visible || item.visible(game)) {
-        menu_lines.push_back(ftxui::Button(item.text, [&game, &item]() { item.action(game); }, ftxui::ButtonOption{false}));
+        menu_lines.push_back(ftxui::Button(
+          item.text, [&game, &item]() { item.action(game); }, Animated()));
       }
     }
 
@@ -121,6 +144,39 @@ protected:
 
   void flush_() override {}
 };
+
+
+
+// todo make PR back into FTXUI?
+class CatchEventBase : public ftxui::ComponentBase
+{
+public:
+  // Constructor.
+  explicit CatchEventBase(std::function<bool(ftxui::Event)> on_event) : on_event_(std::move(on_event)) {}
+
+  // Component implementation.
+  bool OnEvent(ftxui::Event event) override
+  {
+    if (on_event_(event)) {
+      return true;
+    } else {
+      return ComponentBase::OnEvent(event);
+    }
+  }
+
+  [[nodiscard]] bool Focusable() const override { return true; }
+
+protected:
+  std::function<bool(ftxui::Event)> on_event_;
+};
+
+ftxui::Component CatchEvent(ftxui::Component child, std::function<bool(ftxui::Event event)> on_event)
+{
+  auto out = Make<CatchEventBase>(std::move(on_event));
+  out->Add(std::move(child));
+  return out;
+}
+
 
 void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOLINT cognitive complexity
 {
@@ -214,7 +270,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
 
   auto container = ftxui::Container::Vertical({});
 
-  auto key_press = ftxui::CatchEvent(container, [&](const ftxui::Event &event) {
+  auto key_press = lefticus::awesome_game::CatchEvent(container, [&](const ftxui::Event &event) {
     events.push_back(event);
     return false;
   });
@@ -232,8 +288,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
     try {
       game_iteration(new_time - last_time);
     } catch (const std::exception &exception) {
-      const auto message =
-        fmt::format("Unhandled std::exception in game_iteration:\n\n{}", exception.what());
+      const auto message = fmt::format("Unhandled std::exception in game_iteration:\n\n{}", exception.what());
       game.popup_message = message;
       spdlog::critical(message);
     } catch (...) {
@@ -262,6 +317,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
   };
 
 
+  // todo at some point replace this with a renderer that detects and uses the 'focus' flag
   auto game_renderer = ftxui::Renderer(key_press, make_layout);
 
   auto menu_renderer =
