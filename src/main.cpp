@@ -8,7 +8,16 @@
 #include <ftxui/component/screen_interactive.hpp>// for ScreenInteractive
 
 #include <spdlog/sinks/base_sink.h>
+
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4189)
+#endif
 #include <spdlog/spdlog.h>
+#ifdef _MSC_VER
+#pragma warning(default : 4189)
+#endif
+
 
 #include "bitmap.hpp"
 #include "color.hpp"

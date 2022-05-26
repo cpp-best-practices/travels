@@ -3,7 +3,14 @@
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4189)
+#endif
 #include <spdlog/spdlog.h>
+#ifdef _MSC_VER
+#pragma warning(default: 4189)
+#endif
 
 namespace lefticus::awesome_game {
 
