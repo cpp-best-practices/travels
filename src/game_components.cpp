@@ -44,7 +44,8 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cofnitiv
 
         if (tile.contains("properties")) {
           for (const auto &property : tile["properties"]) {
-            if (property["name"] == "passable") { passable = property["value"]; }// cppcheck-suppress useStlAlgorithm
+            // cppcheck-suppress useStlAlgorithm
+            if (property["name"] == "passable") { passable = property["value"]; }
           }
         }
 
