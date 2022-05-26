@@ -35,4 +35,4 @@ Vector2D<Color> load_png(const std::filesystem::path &filename)
 
   return results;
 }
-}// namespace lefticus::my_awesome_game
+}// namespace lefticus::awesome_game

@@ -11,24 +11,29 @@ Game_Map make_map()// NOLINT cognitive complexity
 
   auto colors_used = std::make_shared<std::set<Color>>();
 
-  auto empty_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
-      if (layer == Layer::Foreground) { return; }
-      fill(pixels, Color{ 5, 5, 25, 255 });// NOLINT magic number
-    };
+  auto empty_draw = [](Vector2D_Span<Color> &pixels,
+                      [[maybe_unused]] const Game &game,
+                      [[maybe_unused]] Point map_location,
+                      Layer layer) {
+    if (layer == Layer::Foreground) { return; }
+    fill(pixels, Color{ 5, 5, 25, 255 });// NOLINT magic number
+  };
 
   auto cannot_enter = [](const Game &, Point, Direction) -> bool { return false; };
 
-  auto water_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
+  auto water_draw = [](Vector2D_Span<Color> &pixels,
+                      [[maybe_unused]] const Game &game,
+                      [[maybe_unused]] Point map_location,
+                      Layer layer) {
     if (layer == Layer::Foreground) { return; }
-      fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
-    };
+    fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
+  };
 
 
   auto wall_draw = [colors_used]([[maybe_unused]] Vector2D_Span<Color> &pixels,
                      [[maybe_unused]] const Game &game,
-                     [[maybe_unused]] Point map_location, Layer layer) {
+                     [[maybe_unused]] Point map_location,
+                     Layer layer) {
     if (layer == Layer::Foreground) { return; }
     static constexpr auto wall_color = Color{ 100, 100, 100, 128 };
 

@@ -10,8 +10,8 @@
 #include <variant>
 
 #include "color.hpp"
-#include "vector2d.hpp"
 #include "tile_set.hpp"
+#include "vector2d.hpp"
 
 namespace lefticus::awesome_game {
 
@@ -86,8 +86,6 @@ struct variable
 };
 
 
-
-
 inline std::string to_string(const Variable &variable)
 {
   return std::visit([](const auto &value) { return fmt::format("{}", value); }, variable);
@@ -100,16 +98,15 @@ struct Menu
     std::string text;
     std::function<void(Game &)> action;
     std::function<bool(const Game &)> visible;
-    MenuItem(std::string text_, std::string message_, std::function<bool (const Game &)> = {});
+    MenuItem(std::string text_, std::string message_, std::function<bool(const Game &)> = {});
 
     template<typename Compare>
     MenuItem(std::string text_, std::string message_, Variable_Comparison<Compare> comp)
-     : MenuItem(std::move(text_), std::move(message_), std::function<bool(const Game &)>(std::move(comp.comparitor)))
-    {
-    }
+      : MenuItem(std::move(text_), std::move(message_), std::function<bool(const Game &)>(std::move(comp.comparitor)))
+    {}
 
-    MenuItem(std::string text_, std::function<void(Game &)> action_, std::function<bool (const Game &)> visible_ = {});
-    
+    MenuItem(std::string text_, std::function<void(Game &)> action_, std::function<bool(const Game &)> visible_ = {});
+
     template<typename Compare>
     MenuItem(std::string text_, std::function<void(Game &)> action_, Variable_Comparison<Compare> comp)
       : MenuItem(std::move(text_), std::move(action_), std::function<bool(const Game &)>(std::move(comp.comparitor)))

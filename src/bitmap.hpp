@@ -42,6 +42,6 @@ struct Bitmap : ftxui::Node
 
 Vector2D<Color> load_png(const std::filesystem::path &filename);
 
-}// namespace lefticus::my_awesome_game
+}// namespace lefticus::awesome_game
 
 #endif// AWESOME_GAME_BITMAP_HPP

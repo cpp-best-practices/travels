@@ -84,6 +84,6 @@ template<typename Type> struct Basic_Color
 };
 
 using Color = Basic_Color<std::uint8_t>;
-}// namespace lefticus::my_awesome_game
+}// namespace lefticus::awesome_game
 
 #endif// AWESOME_GAME_COLOR_HPP

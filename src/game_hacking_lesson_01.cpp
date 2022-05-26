@@ -14,43 +14,47 @@ Game_Map make_map()// NOLINT cognitive complexity
 {
   Game_Map map{ Size{ 10, 10 } };// NOLINT magic numbers
 
-  auto button_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
-      if (layer == Layer::Background) {
-        if (button_pressed(game)) {
-          // Light grey if button is pressed
-          fill(pixels, Color{ 45, 45, 45, 255 });// NOLINT magic number
-        } else {
-          // dark grey if button is not pressed
-          fill(pixels, Color{ 15, 15, 15, 255 });// NOLINT magic number
-        }
+  auto button_draw = [](Vector2D_Span<Color> &pixels,
+                       [[maybe_unused]] const Game &game,
+                       [[maybe_unused]] Point map_location,
+                       Layer layer) {
+    if (layer == Layer::Background) {
+      if (button_pressed(game)) {
+        // Light grey if button is pressed
+        fill(pixels, Color{ 45, 45, 45, 255 });// NOLINT magic number
+      } else {
+        // dark grey if button is not pressed
+        fill(pixels, Color{ 15, 15, 15, 255 });// NOLINT magic number
       }
-    };
+    }
+  };
 
-  auto empty_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
-      if (layer == Layer::Background) {
-        fill(pixels, Color{ 5, 5, 25, 255 });// NOLINT magic number
-      }
-    };
+  auto empty_draw = [](Vector2D_Span<Color> &pixels,
+                      [[maybe_unused]] const Game &game,
+                      [[maybe_unused]] Point map_location,
+                      Layer layer) {
+    if (layer == Layer::Background) {
+      fill(pixels, Color{ 5, 5, 25, 255 });// NOLINT magic number
+    }
+  };
 
   auto cannot_enter = [](const Game &, Point, Direction) -> bool { return false; };
 
-  auto water_draw =
-    [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location, Layer layer) {
-      if (layer == Layer::Background) {
-        fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
-      }
-    };
+  auto water_draw = [](Vector2D_Span<Color> &pixels,
+                      [[maybe_unused]] const Game &game,
+                      [[maybe_unused]] Point map_location,
+                      Layer layer) {
+    if (layer == Layer::Background) {
+      fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
+    }
+  };
 
 
   auto wall_draw = []([[maybe_unused]] Vector2D_Span<Color> &pixels,
                      [[maybe_unused]] const Game &game,
                      [[maybe_unused]] Point map_location,
                      Layer layer) {
-    if (layer == Layer::Foreground) {
-      return;
-    }
+    if (layer == Layer::Foreground) { return; }
 
     static constexpr auto wall_color = Color{ 100, 100, 100, 128 };
 
