@@ -8,7 +8,16 @@
 #include <ftxui/component/screen_interactive.hpp>// for ScreenInteractive
 
 #include <spdlog/sinks/base_sink.h>
+
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4189)
+#endif
 #include <spdlog/spdlog.h>
+#ifdef _MSC_VER
+#pragma warning(default : 4189)
+#endif
+
 
 #include "bitmap.hpp"
 #include "color.hpp"
@@ -84,10 +93,10 @@ void draw(Bitmap &viewport, const Game &game)
   }
 }
 
-ftxui::ButtonOption Animated(ftxui::Color background, // NOLINT
-  ftxui::Color foreground,  // NOLINT
-  ftxui::Color background_active, // NOLINT
-  ftxui::Color foreground_active) // NOLINT
+ftxui::ButtonOption Animated(ftxui::Color background,// NOLINT
+  ftxui::Color foreground,// NOLINT
+  ftxui::Color background_active,// NOLINT
+  ftxui::Color foreground_active)// NOLINT
 {
   ftxui::ButtonOption option;
   option.transform = [](const ftxui::EntryState &s) {
@@ -144,7 +153,6 @@ protected:
 
   void flush_() override {}
 };
-
 
 
 // todo make PR back into FTXUI?

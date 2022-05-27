@@ -37,12 +37,16 @@ Game_Map make_store()
       };
 
   map.locations.at(Point{ 3, 3 }).enter_action = [](Game &game, Point, Direction) {
-    game.set_menu(
-      Menu{ { "Ask about town", "This is the quiet town of 'Quad Corners'. The economy has been down for the last few years. People have been moving away. It's a bit depressing, really." },
-        set_flag("Tell about present", "Ah yes, the Xstation6, all of the kids want one. You'll probably have a hard time finding one of those around here.", variable{"xstation"}),
-        check_flag("Ask about Xstation6", "I think bob has one.", variable{"xstation"}),
+    game.set_menu(Menu{ { "Ask about town",
+                          "This is the quiet town of 'Quad Corners'. The economy has been down for the last few years. "
+                          "People have been moving away. It's a bit depressing, really." },
+      set_flag("Tell about present",
+        "Ah yes, the Xstation6, all of the kids want one. You'll probably have a hard time finding one of those around "
+        "here.",
+        variable{ "xstation" }),
+      check_flag("Ask about Xstation6", "I think bob has one.", variable{ "xstation" }),
 
-        exit_menu() });
+      exit_menu() });
   };
 
   return map;

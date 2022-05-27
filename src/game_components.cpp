@@ -3,7 +3,14 @@
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4189)
+#endif
 #include <spdlog/spdlog.h>
+#ifdef _MSC_VER
+#pragma warning(default : 4189)
+#endif
 
 namespace lefticus::awesome_game {
 
@@ -44,7 +51,8 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cofnitiv
 
         if (tile.contains("properties")) {
           for (const auto &property : tile["properties"]) {
-            if (property["name"] == "passable") { passable = property["value"]; }// cppcheck-suppress useStlAlgorithm
+            // cppcheck-suppress useStlAlgorithm
+            if (property["name"] == "passable") { passable = property["value"]; }
           }
         }
 
@@ -134,7 +142,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cofnitiv
 
     map.locations.at(point).can_enter = [tiles = tile_data](const Game &game, Point, Direction) {
       const auto &tile_sets = game.get_current_map().tile_sets;
-      return std::ranges::all_of(tiles, [&](const auto &tile) {
+      return std::all_of(tiles.begin(), tiles.end(), [&](const auto &tile) {
         return tile.foreground || tile.background || tile.tileid == 0
                || tile_sets[0].properties.at(tile.tileid).passable;
       });
