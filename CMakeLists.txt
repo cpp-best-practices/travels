@@ -128,6 +128,10 @@ dynamic_project_options(
 
 target_compile_features(project_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
+# We don't have any way of ensuring that all static dependencies are compiled with
+# address sanitizer enabled.
+target_compile_definitions(project_options INTERFACE _DISABLE_VECTOR_ANNOTATION)
+
 # configure files based on CMake configuration options
 add_subdirectory(configured_files)
 
