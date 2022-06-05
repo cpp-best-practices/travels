@@ -53,6 +53,7 @@ struct Game_Map
   }
 };
 
+Game_Map load_tiled_map(const std::filesystem::path &map_json, const std::vector<std::filesystem::path> &search_paths);
 Game_Map load_tiled_map(const std::filesystem::path &map_json);
 
 

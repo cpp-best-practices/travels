@@ -5,9 +5,9 @@
 
 namespace lefticus::awesome_game {
 
-Game_Map make_map()
+Game_Map make_map(const std::vector<std::filesystem::path> &search_directories)
 {
-  auto map = load_tiled_map("/home/jason/my_awesome_game/resources/tiled/tiles/Map.tmj");
+  auto map = load_tiled_map("awesome_game/tiled/tiles/Map.tmj", search_directories);
 
   map.locations.at(Point{ 4, 5 }).can_enter// NOLINT magic numbers
     = [](const Game &, Point, Direction) { return true; };
@@ -26,9 +26,9 @@ Game_Map make_map()
   return map;
 }
 
-Game_Map make_store()
+Game_Map make_store(const std::vector<std::filesystem::path> &search_directories)
 {
-  auto map = load_tiled_map("/home/jason/my_awesome_game/resources/tiled/tiles/Store.tmj");
+  auto map = load_tiled_map("awesome_game/tiled/tiles/Store.tmj", search_directories);
 
   map.locations.at(Point{ 7, 6 }).enter_action// NOLINT magic numbers
     = [](Game &game, Point, Direction) {
@@ -52,11 +52,11 @@ Game_Map make_store()
   return map;
 }
 
-Game make_game()
+Game make_game(const std::vector<std::filesystem::path> &search_directories)
 {
   Game retval{};
-  retval.maps.emplace("main", make_map());
-  retval.maps.emplace("store", make_store());
+  retval.maps.emplace("main", make_map(search_directories));
+  retval.maps.emplace("store", make_store(search_directories));
   retval.current_map = "main";
   retval.tile_size = Size{ 8, 8 };// NOLINT Magic Number
 

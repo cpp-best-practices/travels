@@ -14,7 +14,24 @@
 
 namespace lefticus::awesome_game {
 
-Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cofnitive complexity
+Game_Map load_tiled_map(const std::filesystem::path &map_json, const std::vector<std::filesystem::path> &search_paths)
+{
+  if (map_json.is_absolute()) {
+    spdlog::warn("Passed an absolute map_json path and a set of search paths, that doesn't make sense");
+    return load_tiled_map(map_json);
+  }
+
+  for (const auto &search_path : search_paths) {
+    spdlog::debug("Trying search path '{}'", search_path.string());
+    const auto path = search_path / map_json;
+    if (std::error_code ec; std::filesystem::is_regular_file(path, ec)) { return load_tiled_map(path); }
+  }
+
+  throw std::runtime_error(fmt::format("Unable to find map in any search path: {}", map_json.string()));
+}
+
+
+Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitive complexity
 {
   const auto parent_path = map_json.parent_path();
 

@@ -430,6 +430,25 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
 }
 }// namespace lefticus::awesome_game
 
+
+std::vector<std::filesystem::path> resource_search_directories()
+{
+  std::vector<std::filesystem::path> results;
+
+  auto current_path = std::filesystem::current_path();
+
+  while (current_path.has_relative_path()) {
+    results.push_back(current_path);
+    results.push_back(current_path / "resources");
+    current_path = current_path.parent_path();
+  }
+
+  results.emplace_back(my_awesome_game::cmake::source_dir);
+  results.push_back(std::filesystem::path(my_awesome_game::cmake::source_dir) / "resources");
+
+  return results;
+}
+
 int main(int argc, const char **argv)
 {
   try {
@@ -444,6 +463,7 @@ int main(int argc, const char **argv)
           -h --help     Show this screen.
           --version     Show version.
 )";
+
     spdlog::set_level(spdlog::level::trace);
 
     std::map<std::string, docopt::value> args = docopt::docopt(USAGE,
@@ -454,7 +474,11 @@ int main(int argc, const char **argv)
         my_awesome_game::cmake::project_version));// version string, acquired
                                                   // from config.hpp via CMake
 
-    auto game = lefticus::awesome_game::make_game();
+    // to start the lessons, comment out this line
+    auto game = lefticus::awesome_game::make_game(resource_search_directories());
+
+    // and uncomment this line
+    //auto game = lefticus::awesome_game::hacking::lesson_00::make_lesson();
 
     // we want to take over as the main spdlog sink
     auto log_sink = std::make_shared<lefticus::awesome_game::log_sink<std::mutex>>();

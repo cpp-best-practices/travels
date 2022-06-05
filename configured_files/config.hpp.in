@@ -6,6 +6,7 @@
 namespace my_awesome_game::cmake {
 static constexpr std::string_view project_name = "@PROJECT_NAME@";
 static constexpr std::string_view project_version = "@PROJECT_VERSION@";
+static constexpr std::string_view source_dir = "@CMAKE_SOURCE_DIR@";
 static constexpr int project_version_major { @PROJECT_VERSION_MAJOR@ };
 static constexpr int project_version_minor { @PROJECT_VERSION_MINOR@ };
 static constexpr int project_version_patch { @PROJECT_VERSION_PATCH@ };
