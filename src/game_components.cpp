@@ -12,7 +12,7 @@
 #pragma warning(default : 4189)
 #endif
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 Game_Map load_tiled_map(const std::filesystem::path &map_json, const std::vector<std::filesystem::path> &search_paths)
 {
@@ -204,4 +204,4 @@ Menu::MenuItem check_flag(std::string text, std::string message, variable var)
 }
 
 
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels

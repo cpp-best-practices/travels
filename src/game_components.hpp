@@ -13,7 +13,7 @@
 #include "tile_set.hpp"
 #include "vector2d.hpp"
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 struct Game;
 
@@ -257,6 +257,6 @@ Menu::MenuItem exit_menu();
 Menu::MenuItem set_flag(std::string text, std::string message, variable var);
 Menu::MenuItem check_flag(std::string text, std::string message, variable var);
 
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 #endif// AWESOME_GAME_GAME_COMPONENTS_HPP

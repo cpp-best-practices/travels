@@ -3,12 +3,12 @@
 
 #include <cstdint>
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 struct Size
 {
   std::size_t width;
   std::size_t height;
 };
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 #endif// AWESOME_GAME_SIZE_HPP

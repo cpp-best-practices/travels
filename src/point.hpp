@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 struct Point
 {
   std::size_t x;
@@ -22,6 +22,6 @@ struct Point
 
   friend auto operator<=>(const Point &, const Point &) = default;
 };
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 #endif// AWESOME_GAME_POINT_HPP

@@ -9,7 +9,7 @@
 #include "vector2d.hpp"
 #include <fmt/format.h>
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 // A simple way of representing a bitmap on screen using only characters
 struct Bitmap : ftxui::Node
@@ -42,6 +42,6 @@ struct Bitmap : ftxui::Node
 
 Vector2D<Color> load_png(const std::filesystem::path &filename);
 
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 #endif// AWESOME_GAME_BITMAP_HPP

@@ -3,7 +3,7 @@
 #include "game_components.hpp"
 #include <set>
 
-namespace lefticus::awesome_game::hacking::lesson_02 {
+namespace lefticus::travels::hacking::lesson_02 {
 
 Game_Map make_map()// NOLINT cognitive complexity
 {
@@ -176,4 +176,4 @@ Game make_lesson()
 
   return retval;
 }
-}// namespace lefticus::awesome_game::hacking::lesson_02
+}// namespace lefticus::travels::hacking::lesson_02

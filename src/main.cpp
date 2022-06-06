@@ -35,7 +35,7 @@
 #include <internal_use_only/config.hpp>
 
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 
 void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &map)
@@ -278,7 +278,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
 
   auto container = ftxui::Container::Vertical({});
 
-  auto key_press = lefticus::awesome_game::CatchEvent(container, [&](const ftxui::Event &event) {
+  auto key_press = lefticus::travels::CatchEvent(container, [&](const ftxui::Event &event) {
     events.push_back(event);
     return false;
   });
@@ -428,7 +428,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
   refresh_ui_continue = false;
   refresh_ui.join();
 }
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 
 std::vector<std::filesystem::path> resource_search_directories()
@@ -453,12 +453,12 @@ int main(int argc, const char **argv)
 {
   try {
     static constexpr auto USAGE =
-      R"(awesome_game
+      R"(travels
 
     Usage:
-          awesome_game
-          awesome_game (-h | --help)
-          awesome_game --version
+          travels
+          travels (-h | --help)
+          travels --version
  Options:
           -h --help     Show this screen.
           --version     Show version.
@@ -475,18 +475,18 @@ int main(int argc, const char **argv)
                                                   // from config.hpp via CMake
 
     // to start the lessons, comment out this line
-    auto game = lefticus::awesome_game::make_game(resource_search_directories());
+    auto game = lefticus::travels::make_game(resource_search_directories());
 
     // and uncomment this line
-    //auto game = lefticus::awesome_game::hacking::lesson_00::make_lesson();
+    //auto game = lefticus::travels::hacking::lesson_00::make_lesson();
 
     // we want to take over as the main spdlog sink
-    auto log_sink = std::make_shared<lefticus::awesome_game::log_sink<std::mutex>>();
+    auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
 
     spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
 
     spdlog::set_level(spdlog::level::trace);
-    lefticus::awesome_game::play_game(game, log_sink);
+    lefticus::travels::play_game(game, log_sink);
   } catch (const std::exception &e) {
     fmt::print("Unhandled exception in main: {}", e.what());
   }

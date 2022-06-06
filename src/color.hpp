@@ -8,7 +8,7 @@
 
 
 // Todo: move this into `tools` project?
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 template<typename Type> struct Basic_Color;
 
 template<typename OutType, typename InType>
@@ -84,6 +84,6 @@ template<typename Type> struct Basic_Color
 };
 
 using Color = Basic_Color<std::uint8_t>;
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 #endif// AWESOME_GAME_COLOR_HPP
