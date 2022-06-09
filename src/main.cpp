@@ -478,7 +478,7 @@ int main(int argc, const char **argv)
     auto game = lefticus::travels::make_game(resource_search_directories());
 
     // and uncomment this line
-    //auto game = lefticus::travels::hacking::lesson_00::make_lesson();
+    // auto game = lefticus::travels::hacking::lesson_00::make_lesson();
 
     // we want to take over as the main spdlog sink
     auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
