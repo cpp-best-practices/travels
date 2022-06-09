@@ -472,7 +472,7 @@ int main(int argc, const char **argv)
       fmt::format("{} {}",
         travels::cmake::project_name,
         travels::cmake::project_version));// version string, acquired
-                                                  // from config.hpp via CMake
+                                          // from config.hpp via CMake
 
     // to start the lessons, comment out this line
     auto game = lefticus::travels::make_game(resource_search_directories());
