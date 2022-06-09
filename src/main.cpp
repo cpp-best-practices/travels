@@ -99,9 +99,9 @@ ftxui::ButtonOption Animated(ftxui::Color background,// NOLINT
   ftxui::Color foreground_active)// NOLINT
 {
   ftxui::ButtonOption option;
-  option.transform = [](const ftxui::EntryState &s) {
-    auto element = ftxui::text(s.label);
-    if (s.focused) { element |= ftxui::bold; }
+  option.transform = [](const ftxui::EntryState &state) {
+    auto element = ftxui::text(state.label);
+    if (state.focused) { element |= ftxui::bold; }
     return element;
   };
   option.animated_colors.foreground.Set(foreground, foreground_active);
@@ -335,8 +335,8 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
     ftxui::Elements paragraphs;
 
     std::string paragraph;
-    for (const auto c : game.popup_message) {
-      if (c == '\n') {
+    for (const auto character : game.popup_message) {
+      if (character == '\n') {
         if (paragraph.empty()) {
           paragraphs.push_back(ftxui::separatorEmpty());
         } else {
@@ -344,7 +344,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
           paragraph.clear();
         }
       } else {
-        paragraph.push_back(c);
+        paragraph.push_back(character);
       }
     }
 

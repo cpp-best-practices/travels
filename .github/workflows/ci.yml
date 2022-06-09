@@ -117,7 +117,7 @@ jobs:
 
           cppcheck: true
 
-          gcovr: true
+          gcovr: 5.0
           opencppcoverage: true
 
       - name: Cleanup Conan system packages (they are not properly cached)
