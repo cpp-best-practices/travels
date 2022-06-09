@@ -6,7 +6,7 @@ find_package(nlohmann_json CONFIG)
 
 # Generic test that uses conan libs
 add_executable(
-  awesome_game
+  travels
   main.cpp
   color.hpp
   size.hpp
@@ -27,7 +27,7 @@ add_executable(
   game_components.cpp)
 
 target_link_libraries(
-  awesome_game
+  travels
   PRIVATE project_options
           project_warnings
           docopt::docopt
@@ -37,10 +37,10 @@ target_link_libraries(
           nlohmann_json::nlohmann_json)
 
 target_link_system_libraries(
-  awesome_game
+  travels
   PRIVATE
   ftxui::screen
   ftxui::dom
   ftxui::component)
 
-target_include_directories(awesome_game PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
+target_include_directories(travels PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")

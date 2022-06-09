@@ -49,10 +49,10 @@ include(${_project_options_SOURCE_DIR}/Index.cmake)
 
 # Set the project name and language
 project(
-  my_awesome_game
+  travels
   VERSION 0.0.1
   DESCRIPTION ""
-  HOMEPAGE_URL "https://github.com/lefticus/my_awesome_game"
+  HOMEPAGE_URL "https://github.com/cpp-best-practices/travels"
   LANGUAGES CXX C)
 
 set(GIT_SHA
@@ -161,11 +161,11 @@ if(MSVC)
 endif()
 
 # set the startup project for the "play" button in MSVC
-set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT awesome_game)
+set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT travels)
 
 # Add other targets that you want installed here, be default we just package the one executable
 # we know we want to ship
-package_project(TARGETS awesome_game)
+package_project(TARGETS travels)
 
 # Experience shows that explicit package naming can help make it easier to sort
 # out potential ABI related issues before they start, while helping you

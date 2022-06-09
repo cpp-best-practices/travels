@@ -1,9 +1,9 @@
-#ifndef my_awesome_game_CONFIG_HPP
-#define my_awesome_game_CONFIG_HPP
+#ifndef travels_CONFIG_HPP
+#define travels_CONFIG_HPP
 
 // this is a basic example of how a CMake configured file might look
 // in this particular case, we are using it to set the version number of our executable
-namespace my_awesome_game::cmake {
+namespace travels::cmake {
 static constexpr std::string_view project_name = "@PROJECT_NAME@";
 static constexpr std::string_view project_version = "@PROJECT_VERSION@";
 static constexpr std::string_view source_dir = "@CMAKE_SOURCE_DIR@";
@@ -12,6 +12,6 @@ static constexpr int project_version_minor { @PROJECT_VERSION_MINOR@ };
 static constexpr int project_version_patch { @PROJECT_VERSION_PATCH@ };
 static constexpr int project_version_tweak { @PROJECT_VERSION_TWEAK@ };
 static constexpr std::string_view git_sha = "@GIT_SHA@";
-}// namespace my_awesome_game::cmake
+}// namespace travels::cmake
 
 #endif
