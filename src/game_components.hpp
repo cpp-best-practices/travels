@@ -128,7 +128,8 @@ struct Game
   Character player;
   std::function<void(Game &)> start_game;
 
-  std::map<std::string, Variable> variables;
+  // enable transparent comparators for std::string
+  std::map<std::string, Variable, std::less<>> variables;
   std::vector<std::string> display_variables;
   std::string current_map;
   std::chrono::milliseconds clock;
