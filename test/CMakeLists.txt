@@ -1,6 +1,8 @@
 find_package(Catch2 REQUIRED)
 
-include(CTest)
+enable_testing()
+
+#include(CTest)
 include(Catch)
 
 add_library(catch_main OBJECT catch_main.cpp)
