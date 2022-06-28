@@ -30,12 +30,12 @@
 #include "size.hpp"
 
 // This file will be generated automatically when you run the CMake
-// configuration step. It creates a namespace called `my_awesome_game`. You can modify
+// configuration step. It creates a namespace called `travels`. You can modify
 // the source template at `configured_files/config.hpp.in`.
 #include <internal_use_only/config.hpp>
 
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 
 void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &map)
@@ -99,9 +99,9 @@ ftxui::ButtonOption Animated(ftxui::Color background,// NOLINT
   ftxui::Color foreground_active)// NOLINT
 {
   ftxui::ButtonOption option;
-  option.transform = [](const ftxui::EntryState &s) {
-    auto element = ftxui::text(s.label);
-    if (s.focused) { element |= ftxui::bold; }
+  option.transform = [](const ftxui::EntryState &state) {
+    auto element = ftxui::text(state.label);
+    if (state.focused) { element |= ftxui::bold; }
     return element;
   };
   option.animated_colors.foreground.Set(foreground, foreground_active);
@@ -278,7 +278,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
 
   auto container = ftxui::Container::Vertical({});
 
-  auto key_press = lefticus::awesome_game::CatchEvent(container, [&](const ftxui::Event &event) {
+  auto key_press = lefticus::travels::CatchEvent(container, [&](const ftxui::Event &event) {
     events.push_back(event);
     return false;
   });
@@ -335,8 +335,8 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
     ftxui::Elements paragraphs;
 
     std::string paragraph;
-    for (const auto c : game.popup_message) {
-      if (c == '\n') {
+    for (const auto character : game.popup_message) {
+      if (character == '\n') {
         if (paragraph.empty()) {
           paragraphs.push_back(ftxui::separatorEmpty());
         } else {
@@ -344,7 +344,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
           paragraph.clear();
         }
       } else {
-        paragraph.push_back(c);
+        paragraph.push_back(character);
       }
     }
 
@@ -428,7 +428,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
   refresh_ui_continue = false;
   refresh_ui.join();
 }
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 
 std::vector<std::filesystem::path> resource_search_directories()
@@ -443,8 +443,8 @@ std::vector<std::filesystem::path> resource_search_directories()
     current_path = current_path.parent_path();
   }
 
-  results.emplace_back(my_awesome_game::cmake::source_dir);
-  results.push_back(std::filesystem::path(my_awesome_game::cmake::source_dir) / "resources");
+  results.emplace_back(travels::cmake::source_dir);
+  results.push_back(std::filesystem::path(travels::cmake::source_dir) / "resources");
 
   return results;
 }
@@ -453,12 +453,12 @@ int main(int argc, const char **argv)
 {
   try {
     static constexpr auto USAGE =
-      R"(awesome_game
+      R"(travels
 
     Usage:
-          awesome_game
-          awesome_game (-h | --help)
-          awesome_game --version
+          travels
+          travels (-h | --help)
+          travels --version
  Options:
           -h --help     Show this screen.
           --version     Show version.
@@ -470,23 +470,23 @@ int main(int argc, const char **argv)
       { std::next(argv), std::next(argv, argc) },
       true,// show help if requested
       fmt::format("{} {}",
-        my_awesome_game::cmake::project_name,
-        my_awesome_game::cmake::project_version));// version string, acquired
-                                                  // from config.hpp via CMake
+        travels::cmake::project_name,
+        travels::cmake::project_version));// version string, acquired
+                                          // from config.hpp via CMake
 
     // to start the lessons, comment out this line
-    auto game = lefticus::awesome_game::make_game(resource_search_directories());
+    auto game = lefticus::travels::make_game(resource_search_directories());
 
     // and uncomment this line
-    //auto game = lefticus::awesome_game::hacking::lesson_00::make_lesson();
+    // auto game = lefticus::travels::hacking::lesson_02::make_lesson();
 
     // we want to take over as the main spdlog sink
-    auto log_sink = std::make_shared<lefticus::awesome_game::log_sink<std::mutex>>();
+    auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
 
     spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
 
     spdlog::set_level(spdlog::level::trace);
-    lefticus::awesome_game::play_game(game, log_sink);
+    lefticus::travels::play_game(game, log_sink);
   } catch (const std::exception &e) {
     fmt::print("Unhandled exception in main: {}", e.what());
   }

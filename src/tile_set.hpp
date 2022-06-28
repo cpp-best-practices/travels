@@ -9,7 +9,7 @@
 #include "color.hpp"
 
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 struct Tile_Set
 {
@@ -47,6 +47,6 @@ private:
   std::size_t start_id;
 };
 
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 #endif// MY_AWESOME_GAME_TILE_SET_HPP

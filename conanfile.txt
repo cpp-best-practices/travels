@@ -7,6 +7,7 @@ docopt.cpp/0.6.3
 spdlog/1.10.0
 nlohmann_json/3.10.5
 lodepng/cci.20200615
+ftxui/3.0.0
 
 [generators]
 cmake_find_package_multi

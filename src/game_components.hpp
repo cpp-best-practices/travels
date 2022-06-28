@@ -13,7 +13,7 @@
 #include "tile_set.hpp"
 #include "vector2d.hpp"
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 struct Game;
 
@@ -128,7 +128,8 @@ struct Game
   Character player;
   std::function<void(Game &)> start_game;
 
-  std::map<std::string, Variable> variables;
+  // enable transparent comparators for std::string
+  std::map<std::string, Variable, std::less<>> variables;
   std::vector<std::string> display_variables;
   std::string current_map;
   std::chrono::milliseconds clock;
@@ -257,6 +258,6 @@ Menu::MenuItem exit_menu();
 Menu::MenuItem set_flag(std::string text, std::string message, variable var);
 Menu::MenuItem check_flag(std::string text, std::string message, variable var);
 
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 #endif// AWESOME_GAME_GAME_COMPONENTS_HPP

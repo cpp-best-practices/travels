@@ -9,7 +9,7 @@
 #include "size.hpp"
 
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 
 template<typename Contained> class Vector2D
@@ -139,6 +139,6 @@ void fill_line(auto &vector2d, Point from, const Point to, const auto &value)
 }
 
 
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels
 
 #endif// AWESOME_GAME_VECTOR2D_HPP

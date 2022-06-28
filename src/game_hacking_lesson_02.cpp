@@ -3,7 +3,7 @@
 #include "game_components.hpp"
 #include <set>
 
-namespace lefticus::awesome_game::hacking::lesson_02 {
+namespace lefticus::travels::hacking::lesson_02 {
 
 Game_Map make_map()// NOLINT cognitive complexity
 {
@@ -29,7 +29,7 @@ Game_Map make_map()// NOLINT cognitive complexity
     fill(pixels, Color{ 0, 0, 250, 255 });// NOLINT magic number
   };
 
-
+  const std::string location_string = fmt::format("{}:{}", __FILE__, __LINE__);
   auto wall_draw = [colors_used]([[maybe_unused]] Vector2D_Span<Color> &pixels,
                      [[maybe_unused]] const Game &game,
                      [[maybe_unused]] Point map_location,
@@ -58,13 +58,18 @@ Game_Map make_map()// NOLINT cognitive complexity
     // static constexpr auto MyPrettyBlue = Color{10,24, 200, 255}; // for example
     //
     // Also consider naming the other colors used!
+
+    static constexpr auto mint_green = Color{ 64, 128, 64, 255 };
+
     switch ((game.clock.count() / 1000) % 2) {// NOLINT magic number
     case 0:
-      fill(pixels, Color{ 64, 128, 64, 255 });// NOLINT magic number
+      fill(pixels, mint_green);
       break;
     case 1:
       fill(pixels, Color{ 128, 64, 64, 255 });// NOLINT magic number
       break;
+
+      // When you add a new color, try to not use // NOLINT!
     }
 
     colors_used->insert(pixels.at(Point{ 3, 3 }));
@@ -108,17 +113,71 @@ Game_Map make_map()// NOLINT cognitive complexity
   map.locations.at(Point{ 8, 6 }) = Flashing_Tile;// NOLINT magic numbers
   map.locations.at(Point{ 5, 5 }) = Flashing_Tile;// NOLINT magic numbers
 
+  static constexpr auto test_and_set =
+    [](Game &game, const std::string &key_to_test, const std::string &key_to_set) -> bool// NOLINT easily swappable
+  {
+    if (const auto &value = game.variables.find(key_to_test);
+        value != game.variables.end() && std::get<bool>(value->second)) {
+      game.variables[key_to_set] = true;
+      return true;
+    } else {
+      return false;
+    }
+  };
+
   map.locations.at(Point{ 2, 1 }).enter_action = [](Game &game, Point, Direction) {
     game.last_message = "What is a Magic Number? {2,3}";
+    game.variables["clue1"] = true;
   };
 
   map.locations.at(Point{ 2, 3 }).enter_action = [](Game &game, Point, Direction) {
-    game.last_message = "Magic Number?  https://en.wikipedia.org/wiki/Magic_number_(programming) {4, 3}";
+    if (test_and_set(game, "clue1", "clue2")) {
+      game.last_message = "Magic Number?  https://en.wikipedia.org/wiki/Magic_number_(programming) {4, 3}";
+    }
   };
 
   map.locations.at(Point{ 4, 3 }).enter_action = [](Game &game, Point, Direction) {
-    game.last_message = "It's a hard coded constant. This is generally a 'Code Smell'";
+    if (test_and_set(game, "clue2", "clue3")) {
+      game.last_message = "It's a hard coded constant. This is generally a 'Code Smell' {3, 5}";
+    }
   };
+
+  map.locations.at(Point{ 3, 5 }).enter_action = [](Game &game, Point, Direction) {// NOLINT magic number
+    if (test_and_set(game, "clue3", "clue4")) {
+      game.last_message = "'Code Smells' might indicate other problems in your code {1, 8}";
+    }
+  };
+
+  map.locations.at(Point{ 1, 8 }).enter_action = [](Game &game, Point, Direction) {// NOLINT magic number
+    if (test_and_set(game, "clue4", "clue5")) {
+      game.last_message = "This code has many // NOLINT comments to prevent 'magic number' warnings {8, 1}";
+    }
+  };
+
+  map.locations.at(Point{ 8, 1 }).enter_action = [](Game &game, Point, Direction) {// NOLINT magic number
+    if (test_and_set(game, "clue5", "clue6")) {
+      game.last_message = fmt::format("Most of these are for colors and locations. Look in {}. {{8, 7}}", __FILE__);
+    }
+  };
+
+  map.locations.at(Point{ 8, 7 }).enter_action = [](Game &game, Point, Direction) {// NOLINT magic number
+    if (test_and_set(game, "clue6", "clue7")) {
+      game.last_message = "Named constants avoid this warning. Ex: const auto Blue = Color{0,0,255,255}; {7, 8}";
+    }
+  };
+
+  map.locations.at(Point{ 7, 8 }).enter_action = [](Game &game, Point, Direction) {// NOLINT magic number
+    if (test_and_set(game, "clue7", "clue8")) {
+      game.last_message = "To access the buttom corner, you need to display *more than 2* colors {5, 6}";
+    }
+  };
+
+  map.locations.at(Point{ 5, 6 }).enter_action = [=](Game &game, Point, Direction) {// NOLINT magic number
+    if (test_and_set(game, "clue8", "clue9")) {
+      game.last_message = fmt::format("Check out {} for more info on how to add colors.", location_string);
+    }
+  };
+
 
   map.locations.at(special_location) = Flashing_Tile;
   map.locations.at(special_location).can_enter =
@@ -176,4 +235,4 @@ Game make_lesson()
 
   return retval;
 }
-}// namespace lefticus::awesome_game::hacking::lesson_02
+}// namespace lefticus::travels::hacking::lesson_02

@@ -1,4 +1,5 @@
 find_package(fmt CONFIG)
+find_package(ftxui CONFIG)
 find_package(spdlog CONFIG)
 find_package(docopt CONFIG)
 find_package(lodepng CONFIG)
@@ -6,7 +7,7 @@ find_package(nlohmann_json CONFIG)
 
 # Generic test that uses conan libs
 add_executable(
-  awesome_game
+  travels
   main.cpp
   color.hpp
   size.hpp
@@ -23,11 +24,11 @@ add_executable(
   game_hacking_lesson_01.hpp
   game_hacking_lesson_02.cpp
   game_hacking_lesson_02.hpp
-        tile_set.hpp
+  tile_set.hpp
   game_components.cpp)
 
 target_link_libraries(
-  awesome_game
+  travels
   PRIVATE project_options
           project_warnings
           docopt::docopt
@@ -37,10 +38,10 @@ target_link_libraries(
           nlohmann_json::nlohmann_json)
 
 target_link_system_libraries(
-  awesome_game
+  travels
   PRIVATE
   ftxui::screen
   ftxui::dom
   ftxui::component)
 
-target_include_directories(awesome_game PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
+target_include_directories(travels PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")

@@ -3,11 +3,11 @@
 #include "game_components.hpp"
 #include <set>
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 Game_Map make_map(const std::vector<std::filesystem::path> &search_directories)
 {
-  auto map = load_tiled_map("awesome_game/tiled/tiles/Map.tmj", search_directories);
+  auto map = load_tiled_map("travels/tiled/tiles/Map.tmj", search_directories);
 
   map.locations.at(Point{ 4, 5 }).can_enter// NOLINT magic numbers
     = [](const Game &, Point, Direction) { return true; };
@@ -28,7 +28,7 @@ Game_Map make_map(const std::vector<std::filesystem::path> &search_directories)
 
 Game_Map make_store(const std::vector<std::filesystem::path> &search_directories)
 {
-  auto map = load_tiled_map("awesome_game/tiled/tiles/Store.tmj", search_directories);
+  auto map = load_tiled_map("travels/tiled/tiles/Store.tmj", search_directories);
 
   map.locations.at(Point{ 7, 6 }).enter_action// NOLINT magic numbers
     = [](Game &game, Point, Direction) {
@@ -88,4 +88,4 @@ Game make_game(const std::vector<std::filesystem::path> &search_directories)
 
   return retval;
 }
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels

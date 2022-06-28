@@ -10,21 +10,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
-
-set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
-FetchContent_Declare(ftxui
-  GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
-  GIT_TAG v3.0.0
-)
-
-FetchContent_GetProperties(ftxui)
-if(NOT ftxui_POPULATED)
-  FetchContent_Populate(ftxui)
-  add_subdirectory(${ftxui_SOURCE_DIR} ${ftxui_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
-
-
-
 # Note: by default ENABLE_DEVELOPER_MODE is True
 # This means that all analysis (sanitizers, static analysis)
 # is enabled and all warnings are treated as errors
@@ -49,10 +34,10 @@ include(${_project_options_SOURCE_DIR}/Index.cmake)
 
 # Set the project name and language
 project(
-  my_awesome_game
+  travels
   VERSION 0.0.1
   DESCRIPTION ""
-  HOMEPAGE_URL "https://github.com/lefticus/my_awesome_game"
+  HOMEPAGE_URL "https://github.com/cpp-best-practices/travels"
   LANGUAGES CXX C)
 
 set(GIT_SHA
@@ -161,11 +146,11 @@ if(MSVC)
 endif()
 
 # set the startup project for the "play" button in MSVC
-set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT awesome_game)
+set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT travels)
 
 # Add other targets that you want installed here, be default we just package the one executable
 # we know we want to ship
-package_project(TARGETS awesome_game)
+package_project(TARGETS travels)
 
 # Experience shows that explicit package naming can help make it easier to sort
 # out potential ABI related issues before they start, while helping you

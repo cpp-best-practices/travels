@@ -12,7 +12,7 @@
 #pragma warning(default : 4189)
 #endif
 
-namespace lefticus::awesome_game {
+namespace lefticus::travels {
 
 Game_Map load_tiled_map(const std::filesystem::path &map_json, const std::vector<std::filesystem::path> &search_paths)
 {
@@ -24,7 +24,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json, const std::vector
   for (const auto &search_path : search_paths) {
     spdlog::debug("Trying search path '{}'", search_path.string());
     const auto path = search_path / map_json;
-    if (std::error_code ec; std::filesystem::is_regular_file(path, ec)) { return load_tiled_map(path); }
+    if (std::error_code error; std::filesystem::is_regular_file(path, error)) { return load_tiled_map(path); }
   }
 
   throw std::runtime_error(fmt::format("Unable to find map in any search path: {}", map_json.string()));
@@ -62,7 +62,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
       result.emplace_back(parent_path / tsj_image_path, tile_size, start_gid);
 
       for (const auto &tile : tsj["tiles"]) {
-        std::size_t id = tile["id"];
+        std::size_t tile_id = tile["id"];
 
         bool passable = true;
 
@@ -73,7 +73,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
           }
         }
 
-        result.back().properties[start_gid + id] = Tile_Set::Tile_Properties{ .passable = passable };
+        result.back().properties[start_gid + tile_id] = Tile_Set::Tile_Properties{ .passable = passable };
       }
     }
     return result;
@@ -111,19 +111,19 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
         }
       }
 
-      std::size_t x = 0;
-      std::size_t y = 0;
+      std::size_t cur_x = 0;
+      std::size_t cur_y = 0;
       for (const auto &tile : layer["data"]) {
 
         std::size_t tileid = tile;
 
-        points[Point{ x, y }].push_back(
+        points[Point{ cur_x, cur_y }].push_back(
           Layer_Info{ .tileid = tileid, .background = background, .foreground = foreground });
 
-        ++x;
-        if (x == width) {
-          x = 0;
-          ++y;
+        ++cur_x;
+        if (cur_x == width) {
+          cur_x = 0;
+          ++cur_y;
         }
       }
     }
@@ -140,9 +140,9 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
 
         if ((layer == Layer::Background && !tile.foreground) || (layer == Layer::Foreground && tile.foreground)) {
           const auto &tile_pixels = tile_sets[0].at(tile.tileid);
-          for (std::size_t y = 0; y < pixels.size().height; ++y) {
-            for (std::size_t x = 0; x < pixels.size().width; ++x) {
-              Point current_pixel{ x, y };
+          for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
+            for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
+              Point current_pixel{ cur_x, cur_y };
 
               if (first_tile && !tile.foreground) {
                 pixels.at(current_pixel) = tile_pixels.at(current_pixel);
@@ -204,4 +204,4 @@ Menu::MenuItem check_flag(std::string text, std::string message, variable var)
 }
 
 
-}// namespace lefticus::awesome_game
+}// namespace lefticus::travels

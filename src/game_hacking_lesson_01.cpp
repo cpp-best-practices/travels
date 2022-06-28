@@ -3,7 +3,7 @@
 #include "game_components.hpp"
 
 
-namespace lefticus::awesome_game::hacking::lesson_01 {
+namespace lefticus::travels::hacking::lesson_01 {
 
 bool button_pressed(const Game &game) { return get<bool>(game.variables.at("ButtonPressed")); }
 
@@ -187,4 +187,4 @@ Game make_lesson()
 
   return retval;
 }
-}// namespace lefticus::awesome_game::hacking::lesson_01
+}// namespace lefticus::travels::hacking::lesson_01
