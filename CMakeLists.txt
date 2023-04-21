@@ -16,7 +16,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set the project name and language
 project(
-  myproject
+  travels
   VERSION 0.0.1
   DESCRIPTION ""
   HOMEPAGE_URL "%%myurl%%"
@@ -48,11 +48,11 @@ string(
 
 target_compile_features(travels_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
-add_library(myproject::travels_options ALIAS travels_options)
-add_library(myproject::travels_warnings ALIAS travels_warnings)
+add_library(travels::travels_options ALIAS travels_options)
+add_library(travels::travels_warnings ALIAS travels_warnings)
 
-#add_library(myproject::travels_options INTERFACE IMPORTED)
-#add_library(myproject::travels_warnings INTERFACE IMPORTED)
+#add_library(travels::travels_options INTERFACE IMPORTED)
+#add_library(travels::travels_warnings INTERFACE IMPORTED)
 
 # configure files based on CMake configuration options
 add_subdirectory(configured_files)
