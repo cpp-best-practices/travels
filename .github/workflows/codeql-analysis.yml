@@ -80,7 +80,7 @@ jobs:
       # has meaningful results
     - name: Configure CMake
       run: |
-        cmake -S . -B ./build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -Dmyproject_PACKAGING_MAINTAINER_MODE:BOOL=${{matrix.packaging_maintainer_mode}} -DOPT_ENABLE_COVERAGE:BOOL=${{ matrix.build_type == 'Debug' }}
+        cmake -S . -B ./build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -Dtravels_PACKAGING_MAINTAINER_MODE:BOOL=${{matrix.packaging_maintainer_mode}} -Dtravels_ENABLE_COVERAGE:BOOL=${{ matrix.build_type == 'Debug' }}
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
