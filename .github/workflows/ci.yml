@@ -3,6 +3,7 @@ on:
   pull_request:
   release:
     types: [published]
+
   push:
     tags:
     branches:
@@ -10,10 +11,8 @@ on:
       - develop
 
 env:
-  # Conan cache environment variables
-  CONAN_SYSREQUIRES_MODE: enabled
-  CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
-  CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
+  CLANG_TIDY_VERSION: "15.0.2"
+  VERBOSE: 1
 
 jobs:
   Test:
@@ -34,16 +33,18 @@ jobs:
           - macos-10.15
           - windows-2019
         compiler:
-          # you can specify the version after `-` like "llvm-13.0.0".
-          - llvm-13.0.0
+          # you can specify the version after `-` like "llvm-15.0.2".
+          - llvm-15.0.2
           - gcc-11
         generator:
           - "Ninja Multi-Config"
         build_type:
           - Release
           - Debug
-        developer_mode:
+        package_maintainer_mode:
           - ON
+          - OFF
+        build_shared:
           - OFF
 
         exclude:
@@ -56,42 +57,99 @@ jobs:
           # if you try to use a compiler that does not have gcov set
           - compiler: gcc-11
             gcov_executable: gcov
-          - compiler: llvm-13.0.0
+            enable_ipo: On
+
+          - compiler: llvm-15.0.2
+            enable_ipo: Off
             gcov_executable: "llvm-cov gcov"
+
+          - os: macos-10.15
+            enable_ipo: Off
+            enable_cppcheck: OFF
+            enable_clang_tidy: OFF
+
+          - os: ubuntu-20.04
+            enable_clang_tidy: On
+            enable_cppcheck: On
+
 
           # Set up preferred package generators, for given build configurations
           - build_type: Release
-            developer_mode: OFF
+            package_maintainer_mode: OFF
             package_generator: TBZ2
 
+          # This exists solely to make sure a non-multiconfig build works
+          - os: ubuntu-20.04
+            compiler: gcc-11
+            generator: "Unix Makefiles"
+            build_type: Debug
+            gcov_executable: gcov
+            package_maintainer_mode: On
+            enable_ipo: Off
+            enable_clang_tidy: On
+            enable_cppcheck: On
+
+
+          # Windows msvc builds
+          - os: windows-2022
+            compiler: msvc
+            generator: "Visual Studio 17 2022"
+            build_type: Debug
+            package_maintainer_mode: On
+            enable_ipo: On
+            enable_clang_tidy: Off
+            enable_cppcheck: Off
+
+
+          - os: windows-2022
+            compiler: msvc
+            generator: "Visual Studio 17 2022"
+            build_type: Release
+            package_maintainer_mode: On
+            enable_ipo: On
+            enable_clang_tidy: Off
+            enable_cppcheck: Off
+
 
           - os: windows-2022
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Debug
-            developer_mode: On
+            package_maintainer_mode: Off
+            enable_clang_tidy: Off
+            enable_cppcheck: Off
+
+
           - os: windows-2022
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Release
-            developer_mode: On
-          - os: windows-2022
-            compiler: msvc
-            generator: "Visual Studio 17 2022"
-            build_type: Debug
-            developer_mode: Off
-          - os: windows-2022
-            compiler: msvc
-            generator: "Visual Studio 17 2022"
-            build_type: Release
-            developer_mode: Off
+            package_maintainer_mode: Off
             package_generator: ZIP
+            enable_clang_tidy: Off
+            enable_cppcheck: Off
 
 
+          - os: windows-2022
+            compiler: msvc
+            generator: "Visual Studio 17 2022"
+            build_type: Release
+            package_maintainer_mode: On
+            enable_ipo: On
+            build_shared: On
+            enable_clang_tidy: Off
+            enable_cppcheck: Off
 
 
 
     steps:
+      - name: Check for llvm version mismatches
+        if: ${{ contains(matrix.compiler, 'llvm') && !contains(matrix.compiler, env.CLANG_TIDY_VERSION) }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('There is a mismatch between configured llvm compiler and clang-tidy version chosen')
+
       - uses: actions/checkout@v2
 
       - name: Setup Cache
@@ -99,7 +157,7 @@ jobs:
         with:
           compiler: ${{ matrix.compiler }}
           build_type: ${{ matrix.build_type }}
-          developer_mode: ${{ matrix.developer_mode }}
+          package_maintainer_mode: ${{ matrix.package_maintainer_mode }}
           generator: ${{ matrix.generator }}
 
       - name: Setup Cpp
@@ -110,25 +168,19 @@ jobs:
 
           cmake: true
           ninja: true
-          conan: true
           vcpkg: false
           ccache: true
-          clangtidy: true
+          clangtidy: ${{ env.CLANG_TIDY_VERSION }}
+
 
           cppcheck: true
 
-          gcovr: 5.0
+          gcovr: true
           opencppcoverage: true
 
-      - name: Cleanup Conan system packages (they are not properly cached)
-        run: |
-          conan remove -f '*/system'
-
-        # make sure coverage is only enabled for Debug builds, since it sets -O0 to make sure coverage
-        # has meaningful results
       - name: Configure CMake
         run: |
-          cmake -S . -B ./build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -DENABLE_DEVELOPER_MODE:BOOL=${{matrix.developer_mode}} -DOPT_ENABLE_COVERAGE:BOOL=${{ matrix.build_type == 'Debug' }} -DGIT_SHA:STRING=${{ github.sha }}
+          cmake -S . -B ./build -G "${{matrix.generator}}"  -Dtravels_ENABLE_CLANG_TIDY:BOOL=${{ matrix.enable_clang_tidy }} -Dtravels_ENABLE_CPPCHECK:BOOL=${{ matrix.enable_cppcheck }} -Dtravels_ENABLE_IPO=${{matrix.enable_ipo }} -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -Dtravels_PACKAGING_MAINTAINER_MODE:BOOL=${{matrix.package_maintainer_mode}} -Dtravels_ENABLE_COVERAGE:BOOL=${{ matrix.build_type == 'Debug' }} -DGIT_SHA:STRING=${{ github.sha }}
 
       - name: Build
         # Execute the build.  You can specify a specific target with "--target <NAME>"
@@ -155,6 +207,15 @@ jobs:
         working-directory: ./build
         run: |
           cpack -C ${{matrix.build_type}} -G ${{matrix.package_generator}}
+
+      - name: Publish Snapshot Release
+        uses: softprops/action-gh-release@v1
+        if: ${{ (github.ref == 'refs/heads/main') && matrix.package_generator != '' }}
+        with:
+          tag_name: "snapshot-${{ github.sha }}"
+          files: |
+            build/*-*${{ matrix.build_type }}*-*.*
+
 
       - name: Publish Tagged Release
         uses: softprops/action-gh-release@v1

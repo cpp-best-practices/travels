@@ -187,7 +187,7 @@ Game_Map make_map()// NOLINT cognitive complexity
 
   map.locations.at(special_location).enter_action = [](Game &game, Point, Direction) {
     game.last_message = "You opened the door! Now change the call to `play_game` to start lesson 03";
-    Menu menu{ { "Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); } },
+    const Menu menu{ { "Continue Game", [](Game &menu_action_game) { menu_action_game.clear_menu(); } },
       { "Exit Game", [](Game &menu_action_game) { menu_action_game.exit_game = true; } } };
     game.set_menu(menu);
   };

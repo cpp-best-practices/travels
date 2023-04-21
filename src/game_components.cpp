@@ -46,8 +46,8 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
 
   const auto map_file = load_json(map_json);
 
-  Size tile_size{ map_file["tilewidth"], map_file["tileheight"] };
-  Size map_size{ map_file["width"], map_file["height"] };
+  const Size tile_size{ map_file["tilewidth"], map_file["tileheight"] };
+  const Size map_size{ map_file["width"], map_file["height"] };
 
   Game_Map map{ map_size };
 
@@ -62,7 +62,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
       result.emplace_back(parent_path / tsj_image_path, tile_size, start_gid);
 
       for (const auto &tile : tsj["tiles"]) {
-        std::size_t tile_id = tile["id"];
+        const std::size_t tile_id = tile["id"];
 
         bool passable = true;
 
@@ -115,7 +115,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
       std::size_t cur_y = 0;
       for (const auto &tile : layer["data"]) {
 
-        std::size_t tileid = tile;
+        const std::size_t tileid = tile;
 
         points[Point{ cur_x, cur_y }].push_back(
           Layer_Info{ .tileid = tileid, .background = background, .foreground = foreground });
@@ -142,7 +142,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
           const auto &tile_pixels = tile_sets[0].at(tile.tileid);
           for (std::size_t cur_y = 0; cur_y < pixels.size().height; ++cur_y) {
             for (std::size_t cur_x = 0; cur_x < pixels.size().width; ++cur_x) {
-              Point current_pixel{ cur_x, cur_y };
+              const Point current_pixel{ cur_x, cur_y };
 
               if (first_tile && !tile.foreground) {
                 pixels.at(current_pixel) = tile_pixels.at(current_pixel);
