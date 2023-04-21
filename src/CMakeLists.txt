@@ -27,19 +27,16 @@ add_executable(
   tile_set.hpp
   game_components.cpp)
 
-target_link_libraries(
-  travels
-  PRIVATE project_options
-          project_warnings
-          docopt::docopt
-          fmt::fmt
-          spdlog::spdlog
-          lodepng::lodepng
-          nlohmann_json::nlohmann_json)
+target_link_libraries(travels PRIVATE travels_options travels_warnings)
 
 target_link_system_libraries(
   travels
   PRIVATE
+  CLI11::CLI11
+  fmt::fmt
+  spdlog::spdlog
+  lodepng
+  nlohmann_json::nlohmann_json
   ftxui::screen
   ftxui::dom
   ftxui::component)

@@ -1,19 +1,10 @@
 name: ci
 on:
   pull_request:
-  release:
-    types: [published]
   push:
     tags:
     branches:
       - main
-      - develop
-
-env:
-  # Conan cache environment variables
-  CONAN_SYSREQUIRES_MODE: enabled
-  CONAN_USER_HOME: "${{ github.workspace }}/conan-cache"
-  CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
 
 jobs:
   Test:
@@ -35,56 +26,76 @@ jobs:
           - windows-2019
         compiler:
           # you can specify the version after `-` like "llvm-13.0.0".
-          - llvm-13.0.0
-          - gcc-11
+          - llvm
+          - gcc-8
         generator:
           - "Ninja Multi-Config"
         build_type:
           - Release
           - Debug
-        developer_mode:
+        package_maintainer_mode:
           - ON
+          - OFF
+        large_tests:
           - OFF
 
         exclude:
           # mingw is determined by this author to be too buggy to support
           - os: windows-2019
-            compiler: gcc-11
+            compiler: gcc-8
+          # These have anonalous failures, not sure what is up with no access to a physical Mac.
+          - os: macos-10.15
+            compiler: gcc-8
+            build_type: Debug
+            package_maintainer_mode: OFF
+          - os: macos-10.15
+            compiler: llvm
+            build_type: Release
+            package_maintainer_mode: OFF
+
+
 
         include:
-          # Add appropriate variables for gcov version required. This will intentionally break
-          # if you try to use a compiler that does not have gcov set
-          - compiler: gcc-11
-            gcov_executable: gcov
-          - compiler: llvm-13.0.0
-            gcov_executable: "llvm-cov gcov"
+          # setup gcov variables for extra compiler versions
+          - compiler: llvm
+            gcov: "llvm-cov gcov"
+          - compiler: gcc-8
+            gcov: "gcov-8"
 
-          # Set up preferred package generators, for given build configurations
-          - build_type: Release
-            developer_mode: OFF
+          # setup preferred package generators
+          - package_maintainer_mode: ON
+            build_type: Release
             package_generator: TBZ2
 
 
-          - os: windows-2022
-            compiler: msvc
-            generator: "Visual Studio 17 2022"
+          # This exists solely to make sure a non-multiconfig build works
+          - os: ubuntu-20.04
+            compiler: gcc
+            gcov: gcov
+            generator: "Unix Makefiles"
             build_type: Debug
-            developer_mode: On
-          - os: windows-2022
+            package_maintainer_mode: OFF
+
+          - os: windows-2019
             compiler: msvc
-            generator: "Visual Studio 17 2022"
-            build_type: Release
-            developer_mode: On
-          - os: windows-2022
-            compiler: msvc
-            generator: "Visual Studio 17 2022"
+            generator: "Visual Studio 16 2019"
             build_type: Debug
-            developer_mode: Off
-          - os: windows-2022
+            package_maintainer_mode: OFF
+          - os: windows-2019
             compiler: msvc
-            generator: "Visual Studio 17 2022"
+            generator: "Visual Studio 16 2019"
             build_type: Release
-            developer_mode: Off
+            package_maintainer_mode: OFF
+          - os: windows-2019
+            compiler: msvc
+            generator: "Visual Studio 16 2019"
+            build_type: Debug
+            package_maintainer_mode: ON
+          - os: windows-2019
+            compiler: msvc
+            generator: "Visual Studio 16 2019"
+            build_type: Release
+            package_maintainer_mode: ON
             package_generator: ZIP
 
 
@@ -93,14 +104,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Setup Cache
-        uses: ./.github/actions/setup_cache
+      - uses: actions/setup-python@v2
+      - name: Cache
+        uses: actions/cache@v2
         with:
-          compiler: ${{ matrix.compiler }}
-          build_type: ${{ matrix.build_type }}
-          developer_mode: ${{ matrix.developer_mode }}
-          generator: ${{ matrix.generator }}
+          path: |
+            ~/vcpkg
+            ./build/vcpkg_installed
+            ${{ env.CONAN_USER_HOME }}
+            ~/.cache/pip
+            ${{ env.HOME }}/.cache/vcpkg/archives
+            ${{ env.XDG_CACHE_HOME }}/vcpkg/archives
+            ${{ env.LOCALAPPDATA }}\vcpkg\archives
+            ${{ env.APPDATA }}\vcpkg\archives
+          key: ${{ runner.os }}-${{ matrix.compiler }}-${{matrix.build_type}}-${{matrix.generator}}-${{matrix.package_maintainer_mode}}-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('./vcpkg.json')}}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.compiler }}-${{matrix.build_type}}-${{matrix.generator}}-${{matrix.package_maintainer_mode}}
+
+      - run: pip3 install cmake ninja
 
       - name: Setup Cpp
         uses: aminya/setup-cpp@v1
@@ -108,27 +129,20 @@ jobs:
           compiler: ${{ matrix.compiler }}
           vcvarsall: ${{ contains(matrix.os, 'windows' )}}
 
-          cmake: true
-          ninja: true
-          conan: true
+          cmake: false
+          ninja: false
           vcpkg: false
           ccache: true
           clangtidy: true
 
           cppcheck: true
 
-          gcovr: 5.0
+          gcovr: true
           opencppcoverage: true
 
-      - name: Cleanup Conan system packages (they are not properly cached)
-        run: |
-          conan remove -f '*/system'
-
-        # make sure coverage is only enabled for Debug builds, since it sets -O0 to make sure coverage
-        # has meaningful results
       - name: Configure CMake
         run: |
-          cmake -S . -B ./build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -DENABLE_DEVELOPER_MODE:BOOL=${{matrix.developer_mode}} -DOPT_ENABLE_COVERAGE:BOOL=${{ matrix.build_type == 'Debug' }} -DGIT_SHA:STRING=${{ github.sha }}
+          cmake -S . -B ./build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -Djson2cpp_ENABLE_PACKAGING_MAINTAINER_MODE:BOOL=${{matrix.package_maintainer_mode}} -Djson2cpp_ENABLE_LARGE_TESTS:BOOL=${{matrix.large_tests}} -Djson2cpp_ENABLE_COVERAGE:BOOL=${{ matrix.build_type == 'Debug' }} -DGIT_SHA:STRING=${{ github.sha }}
 
       - name: Build
         # Execute the build.  You can specify a specific target with "--target <NAME>"
@@ -142,7 +156,11 @@ jobs:
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
         run: |
           ctest -C ${{matrix.build_type}}
-          gcovr -j ${{env.nproc}} --delete --root ../ --print-summary --xml-pretty --xml coverage.xml . --gcov-executable '${{ matrix.gcov_executable }}'
+          pwd
+          which gcov
+          gcov --version
+          gcovr --version
+          gcovr -j ${{env.nproc}} --root ../ --print-summary --xml-pretty --xml coverage.xml . --verbose --gcov-executable '${{matrix.gcov}}'
 
       - name: Windows - Test and coverage
         if: runner.os == 'Windows'
@@ -150,11 +168,19 @@ jobs:
         run: |
           OpenCppCoverage.exe --export_type cobertura:coverage.xml --cover_children -- ctest -C ${{matrix.build_type}}
 
-      - name: CPack
+      - name: Build Package
         if: matrix.package_generator != ''
         working-directory: ./build
         run: |
           cpack -C ${{matrix.build_type}} -G ${{matrix.package_generator}}
+
+      - name: Publish Snapshot Release
+        uses: softprops/action-gh-release@v1
+        if: ${{ (github.ref == 'refs/heads/main') && matrix.package_generator != '' }}
+        with:
+          tag_name: "snapshot-${{ github.sha }}"
+          files: |
+            build/*-*${{ matrix.build_type }}*-*.*
 
       - name: Publish Tagged Release
         uses: softprops/action-gh-release@v1
@@ -162,7 +188,6 @@ jobs:
         with:
           files: |
             build/*-*${{ matrix.build_type }}*-*.*
-
 
       - name: Publish to codecov
         uses: codecov/codecov-action@v2

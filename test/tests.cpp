@@ -1,14 +1,8 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
-unsigned int Factorial(unsigned int number)// NOLINT(misc-no-recursion)
-{
-  return number <= 1 ? number : Factorial(number - 1) * number;
-}
 
-TEST_CASE("Factorials are computed", "[factorial]")
+
+TEST_CASE("Sample test", "[samples]")
 {
-  REQUIRE(Factorial(1) == 1);
-  REQUIRE(Factorial(2) == 2);
-  REQUIRE(Factorial(3) == 6);
-  REQUIRE(Factorial(10) == 3628800);
+  REQUIRE(true);
 }

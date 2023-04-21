@@ -3,20 +3,13 @@
 #include <functional>
 #include <iostream>
 
-#include <docopt/docopt.h>
+#include <CLI/CLI.hpp>
 #include <ftxui/component/component.hpp>// for Slider
 #include <ftxui/component/screen_interactive.hpp>// for ScreenInteractive
 
 #include <spdlog/sinks/base_sink.h>
 
-
-#ifdef _MSC_VER
-#pragma warning(disable : 4189)
-#endif
 #include <spdlog/spdlog.h>
-#ifdef _MSC_VER
-#pragma warning(default : 4189)
-#endif
 
 
 #include "bitmap.hpp"
@@ -274,8 +267,6 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
 
   auto last_time = std::chrono::steady_clock::now();
 
-  std::string last_character;
-
   auto container = ftxui::Container::Vertical({});
 
   auto key_press = lefticus::travels::CatchEvent(container, [&](const ftxui::Event &event) {
@@ -452,27 +443,19 @@ std::vector<std::filesystem::path> resource_search_directories()
 int main(int argc, const char **argv)
 {
   try {
-    static constexpr auto USAGE =
-      R"(travels
+    CLI::App app{ fmt::format("{} version {}", travels::cmake::project_name, travels::cmake::project_version) };
 
-    Usage:
-          travels
-          travels (-h | --help)
-          travels --version
- Options:
-          -h --help     Show this screen.
-          --version     Show version.
-)";
+    bool show_version = false;
+    app.add_flag("--version", show_version, "Show version information");
+
+    CLI11_PARSE(app, argc, argv);
+
+    if (show_version) {
+      fmt::print("{}\n", travels::cmake::project_version);
+      return EXIT_SUCCESS;
+    }
 
     spdlog::set_level(spdlog::level::trace);
-
-    std::map<std::string, docopt::value> args = docopt::docopt(USAGE,
-      { std::next(argv), std::next(argv, argc) },
-      true,// show help if requested
-      fmt::format("{} {}",
-        travels::cmake::project_name,
-        travels::cmake::project_version));// version string, acquired
-                                          // from config.hpp via CMake
 
     // to start the lessons, comment out this line
     auto game = lefticus::travels::make_game(resource_search_directories());
