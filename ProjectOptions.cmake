@@ -7,12 +7,6 @@ include(CheckCXXCompilerFlag)
 macro(travels_setup_options)
   option(travels_ENABLE_HARDENING "Enable hardening" ON)
   option(travels_ENABLE_COVERAGE "Enable coverage reporting" OFF)
-  cmake_dependent_option(
-    travels_ENABLE_GLOBAL_HARDENING
-    "Attempt to push hardening options to built dependencies"
-    ON
-    travels_ENABLE_HARDENING
-    OFF)
 
 
   if((CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*" OR CMAKE_CXX_COMPILER_ID MATCHES ".*GNU.*") AND NOT WIN32)
@@ -46,6 +40,13 @@ macro(travels_setup_options)
     option(travels_ENABLE_PCH "Enable precompiled headers" OFF)
     option(travels_ENABLE_CACHE "Enable ccache" OFF)
   else()
+    cmake_dependent_option(
+      travels_ENABLE_GLOBAL_HARDENING
+      "Attempt to push hardening options to built dependencies"
+      ON
+      travels_ENABLE_HARDENING
+      OFF)
+
     option(travels_ENABLE_IPO "Enable IPO/LTO" ON)
     option(travels_WARNINGS_AS_ERRORS "Treat Warnings As Errors" ON)
     option(travels_ENABLE_USER_LINKER "Enable user-selected linker" OFF)
