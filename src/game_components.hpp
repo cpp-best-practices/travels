@@ -9,6 +9,8 @@
 #include <optional>
 #include <variant>
 
+#include <libraycaster/map.hpp>
+
 #include "color.hpp"
 #include "tile_set.hpp"
 #include "vector2d.hpp"
@@ -31,6 +33,7 @@ struct Location
 struct Character
 {
   Point map_location{};
+  lefticus::geometry::Camera<float> camera;
   std::function<void(Vector2D_Span<Color> &, const Game &, Point)> draw;
 };
 
@@ -123,15 +126,26 @@ struct Menu
 
 struct Game
 {
+  enum struct Map_Type
+  {
+    Map_2D,
+    Map_3D
+  };
+
 
   std::map<std::string, Game_Map> maps;
+  std::map<std::string, std::vector<lefticus::geometry::Segment<float>>> maps_3d;
+
   Character player;
   std::function<void(Game &)> start_game;
 
   // enable transparent comparators for std::string
   std::map<std::string, Variable, std::less<>> variables;
   std::vector<std::string> display_variables;
+
   std::string current_map;
+  Map_Type current_map_type;
+
   std::chrono::milliseconds clock;
   Size tile_size;
 
@@ -143,6 +157,9 @@ struct Game
 
   [[nodiscard]] Game_Map &get_current_map() { return maps.at(current_map); }
   [[nodiscard]] const Game_Map &get_current_map() const { return maps.at(current_map); }
+
+  [[nodiscard]] auto &get_current_map_3d() { return maps_3d.at(current_map); }
+  [[nodiscard]] const auto &get_current_map_3d() const { return maps_3d.at(current_map); }
 
   [[nodiscard]] bool has_popup_message() const { return !popup_message.empty(); }
 

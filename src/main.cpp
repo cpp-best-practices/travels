@@ -11,14 +11,15 @@
 
 #include <spdlog/spdlog.h>
 
+#include <libraycaster/renderer.hpp>
 
 #include "bitmap.hpp"
 #include "color.hpp"
 #include "game.hpp"
 #include "game_components.hpp"
 #include "point.hpp"
-#include "size.hpp"
 #include "print.hpp"
+#include "size.hpp"
 
 // This file will be generated automatically when you run the CMake
 // configuration step. It creates a namespace called `travels`. You can modify
@@ -81,6 +82,17 @@ void draw(Bitmap &viewport, const Game &game)
 {
   if (game.maps.contains(game.current_map)) {
     draw(viewport, game.player.map_location, game, game.maps.at(game.current_map));
+  }
+}
+
+void draw_3d(Bitmap &viewport, const Game &game)
+{
+  if (game.maps_3d.contains(game.current_map)) {
+    lefticus::geometry::render(viewport,
+      viewport.pixels.size().width,
+      viewport.pixels.size().height,
+      std::span<const lefticus::geometry::Segment<float>>(game.maps_3d.at(game.current_map)),
+      game.player.camera);
   }
 }
 
@@ -224,22 +236,37 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
         if (current_event.is_character() && current_event.character() == "l") {
           show_log = true;
           return;
-        } else if (current_event == ftxui::Event::ArrowUp) {
-          --location.y;
-          from = Direction::South;
-        } else if (current_event == ftxui::Event::ArrowDown) {
-          ++location.y;
-          from = Direction::North;
-        } else if (current_event == ftxui::Event::ArrowLeft) {
-          --location.x;
-          from = Direction::East;
-        } else if (current_event == ftxui::Event::ArrowRight) {
-          ++location.x;
-          from = Direction::West;
         } else {
-          return;
+          if (game.current_map_type == Game::Map_Type::Map_2D) {
+            if (current_event == ftxui::Event::ArrowUp) {
+              --location.y;
+              from = Direction::South;
+            } else if (current_event == ftxui::Event::ArrowDown) {
+              ++location.y;
+              from = Direction::North;
+            } else if (current_event == ftxui::Event::ArrowLeft) {
+              --location.x;
+              from = Direction::East;
+            } else if (current_event == ftxui::Event::ArrowRight) {
+              ++location.x;
+              from = Direction::West;
+            } else {
+              return;
+            }
+          } else {
+            const auto walls = std::span<const lefticus::geometry::Segment<float>>(game.maps_3d.at(game.current_map));
+            if (current_event == ftxui::Event::ArrowUp) {
+              game.player.camera.try_move(.1f, walls);
+            } else if (current_event == ftxui::Event::ArrowDown) {
+              game.player.camera.try_move(-.1f, walls);
+            } else if (current_event == ftxui::Event::ArrowLeft) {
+              game.player.camera.rotate(-.1f);
+            } else if (current_event == ftxui::Event::ArrowRight) {
+              game.player.camera.rotate(.1f);
+            }
+            return;
+          }
         }
-
 
         if (game.maps.at(game.current_map).can_enter_from(game, location, from)) {
           auto exit_action = game.maps.at(game.current_map).locations.at(last_location).exit_action;
@@ -255,8 +282,11 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
       }();
     }
 
-
-    draw(*bm, game);
+    if (game.current_map_type == Game::Map_Type::Map_2D) {
+      draw(*bm, game);
+    } else {
+      draw_3d(*bm, game);
+    }
   };
 
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
@@ -457,9 +487,6 @@ int main(int argc, const char **argv)
 
     // to start the lessons, comment out this line
     auto game = lefticus::travels::make_game(resource_search_directories());
-
-    // and uncomment this line
-    // auto game = lefticus::travels::hacking::lesson_02::make_lesson();
 
     // we want to take over as the main spdlog sink
     auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();

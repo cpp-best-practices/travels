@@ -17,6 +17,12 @@ Game_Map make_map(const std::vector<std::filesystem::path> &search_directories)
         game.player.map_location = Point{ 6, 6 };// NOLINT magic numbers
       };
 
+  map.locations.at(Point{ 3, 15 }).enter_action// NOLINT magic numbers
+    = [](Game &game, Point, Direction) {
+        game.current_map = "maze";
+        game.current_map_type = Game::Map_Type::Map_3D;
+      };
+
   map.locations.at(Point{ 4, 6 }).enter_action// NOLINT magic numbers
     = [](Game &game, Point, Direction) { game.last_message = "A store"; };
 
@@ -58,11 +64,24 @@ Game make_game(const std::vector<std::filesystem::path> &search_directories)
   retval.maps.emplace("main", make_map(search_directories));
   retval.maps.emplace("store", make_store(search_directories));
   retval.current_map = "main";
+  retval.current_map_type = Game::Map_Type::Map_2D;
+
   retval.tile_size = Size{ 8, 8 };// NOLINT Magic Number
 
   retval.variables["Cash"] = 50;// NOLINT
   retval.variables["xstation"] = false;
   retval.display_variables.emplace_back("Cash");
+
+
+  constexpr static std::string_view maze(R"(
+# #
+# ####
+#
+######
+)");
+
+
+  retval.maps_3d.emplace("maze", lefticus::geometry::make_map<float>(maze));
 
 
   Character player;

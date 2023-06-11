@@ -29,6 +29,7 @@ target_link_system_libraries(
   spdlog::spdlog
   lodepng
   nlohmann_json::nlohmann_json
+  libraycaster::libraycaster
   ftxui::screen
   ftxui::dom
   ftxui::component)

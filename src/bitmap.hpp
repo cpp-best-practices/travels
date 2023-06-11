@@ -36,6 +36,24 @@ struct Bitmap : ftxui::Node
     }
   }
 
+  void draw_vertical_line(std::tuple<std::uint8_t, std::uint8_t, std::uint8_t> color,
+    std::size_t x,
+    std::size_t start_y,
+    std::size_t end_y)
+  {
+    for (std::size_t y = start_y; y <= end_y; ++y) { draw({ x, y }, color); }
+  }
+
+  void draw(std::pair<std::size_t, std::size_t> location, std::tuple<std::uint8_t, std::uint8_t, std::uint8_t> color)
+  {
+    if (location.first < pixels.size().width && location.second < pixels.size().height) {
+      pixels.at({location.first, location.second}) = Color{ std::get<0>(color), std::get<1>(color), std::get<2>(color) };
+    }
+  }
+
+  void clear() { pixels = decltype(pixels)(pixels.size()); }
+
+
   Vector2D<Color> pixels;
 };
 
