@@ -7,7 +7,6 @@
 #include "color.hpp"
 #include "size.hpp"
 #include "vector2d.hpp"
-#include <fmt/format.h>
 
 namespace lefticus::travels {
 

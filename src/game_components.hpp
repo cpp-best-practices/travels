@@ -3,7 +3,7 @@
 
 #include <chrono>
 #include <filesystem>
-#include <fmt/format.h>
+#include <format>
 #include <functional>
 #include <map>
 #include <optional>
@@ -89,7 +89,7 @@ struct variable
 
 inline std::string to_string(const Variable &variable)
 {
-  return std::visit([](const auto &value) { return fmt::format("{}", value); }, variable);
+  return std::visit([](const auto &value) { return std::format("{}", value); }, variable);
 }
 
 struct Menu

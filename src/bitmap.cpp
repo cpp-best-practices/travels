@@ -1,4 +1,5 @@
 #include <lodepng.h>
+#include <format>
 
 #include "bitmap.hpp"
 
@@ -14,7 +15,7 @@ Vector2D<Color> load_png(const std::filesystem::path &filename)
 
   // if there's an error, display it
   if (error != 0) {
-    throw std::runtime_error(fmt::format("lodepng decoder error {}: {}", error, lodepng_error_text(error)));
+    throw std::runtime_error(std::format("lodepng decoder error {}: {}", error, lodepng_error_text(error)));
   }
 
   // the pixels are now in the vector "image", 4 bytes per pixel, ordered RGBARGBA..., use it as texture, draw it, ...

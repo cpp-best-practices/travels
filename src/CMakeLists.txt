@@ -1,4 +1,3 @@
-find_package(fmt CONFIG)
 find_package(ftxui CONFIG)
 find_package(spdlog CONFIG)
 find_package(docopt CONFIG)
@@ -18,12 +17,6 @@ add_executable(
   game.cpp
   game.hpp
   game_components.hpp
-  game_hacking_lesson_00.cpp
-  game_hacking_lesson_00.hpp
-  game_hacking_lesson_01.cpp
-  game_hacking_lesson_01.hpp
-  game_hacking_lesson_02.cpp
-  game_hacking_lesson_02.hpp
   tile_set.hpp
   game_components.cpp)
 
@@ -33,7 +26,6 @@ target_link_system_libraries(
   travels
   PRIVATE
   CLI11::CLI11
-  fmt::fmt
   spdlog::spdlog
   lodepng
   nlohmann_json::nlohmann_json

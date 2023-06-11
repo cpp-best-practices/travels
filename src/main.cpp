@@ -16,11 +16,9 @@
 #include "color.hpp"
 #include "game.hpp"
 #include "game_components.hpp"
-#include "game_hacking_lesson_00.hpp"
-#include "game_hacking_lesson_01.hpp"
-#include "game_hacking_lesson_02.hpp"
 #include "point.hpp"
 #include "size.hpp"
+#include "print.hpp"
 
 // This file will be generated automatically when you run the CMake
 // configuration step. It creates a namespace called `travels`. You can modify
@@ -141,7 +139,7 @@ protected:
   {
     spdlog::memory_buf_t formatted;
     spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
-    event_log.insert(event_log.begin(), fmt::to_string(formatted));
+    event_log.insert(event_log.begin(), formatted);
   }
 
   void flush_() override {}
@@ -287,7 +285,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
     try {
       game_iteration(new_time - last_time);
     } catch (const std::exception &exception) {
-      const auto message = fmt::format("Unhandled std::exception in game_iteration:\n\n{}", exception.what());
+      const auto message = std::format("Unhandled std::exception in game_iteration:\n\n{}", exception.what());
       game.popup_message = message;
       spdlog::critical(message);
     } catch (...) {
@@ -302,11 +300,11 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
     ftxui::Elements text_components;
     text_components.push_back(ftxui::text("Frame: " + std::to_string(counter)));
     text_components.push_back(
-      ftxui::text(fmt::format("Location: {{{},{}}}", game.player.map_location.x, game.player.map_location.y)));
+      ftxui::text(std::format("Location: {{{},{}}}", game.player.map_location.x, game.player.map_location.y)));
 
     for (const auto &variable : game.display_variables) {
       if (game.variables.contains(variable)) {
-        text_components.push_back(ftxui::text(fmt::format("{}: {}", variable, to_string(game.variables.at(variable)))));
+        text_components.push_back(ftxui::text(std::format("{}: {}", variable, to_string(game.variables.at(variable)))));
       }
     }
 
@@ -443,7 +441,7 @@ std::vector<std::filesystem::path> resource_search_directories()
 int main(int argc, const char **argv)
 {
   try {
-    CLI::App app{ fmt::format("{} version {}", travels::cmake::project_name, travels::cmake::project_version) };
+    CLI::App app{ std::format("{} version {}", travels::cmake::project_name, travels::cmake::project_version) };
 
     bool show_version = false;
     app.add_flag("--version", show_version, "Show version information");
@@ -451,7 +449,7 @@ int main(int argc, const char **argv)
     CLI11_PARSE(app, argc, argv);
 
     if (show_version) {
-      fmt::print("{}\n", travels::cmake::project_version);
+      lefticus::print("{}\n", travels::cmake::project_version);
       return EXIT_SUCCESS;
     }
 
@@ -471,6 +469,6 @@ int main(int argc, const char **argv)
     spdlog::set_level(spdlog::level::trace);
     lefticus::travels::play_game(game, log_sink);
   } catch (const std::exception &e) {
-    fmt::print("Unhandled exception in main: {}", e.what());
+    lefticus::print("Unhandled exception in main: {}", e.what());
   }
 }

@@ -1,7 +1,7 @@
 #ifndef AWESOME_GAME_VECTOR2D_HPP
 #define AWESOME_GAME_VECTOR2D_HPP
 
-#include <fmt/format.h>
+#include <format>
 #include <stdexcept>
 #include <vector>
 
@@ -21,7 +21,7 @@ template<typename Contained> class Vector2D
   void validate_position(const Point point) const
   {
     if (point.x >= size_.width || point.y >= size_.height) {
-      throw std::range_error(fmt::format(
+      throw std::range_error(std::format(
         "index out of range, got: ({},{}), allowed ({}, {})", point.x, point.y, size_.width - 1, size_.height - 1));
     }
   }

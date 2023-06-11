@@ -27,7 +27,7 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json, const std::vector
     if (std::error_code error; std::filesystem::is_regular_file(path, error)) { return load_tiled_map(path); }
   }
 
-  throw std::runtime_error(fmt::format("Unable to find map in any search path: {}", map_json.string()));
+  throw std::runtime_error(std::format("Unable to find map in any search path: {}", map_json.string()));
 }
 
 
