@@ -9,17 +9,20 @@ macro(
   message(STATUS "** Enabling Hardening (Target ${target}) **")
 
   if(MSVC)
-    set(NEW_COMPILE_OPTIONS
-        "${NEW_COMPILE_OPTIONS} /sdl /DYNAMICBASE /guard:cf /NXCOMPAT")
+    set(NEW_COMPILE_OPTIONS "${NEW_COMPILE_OPTIONS} /sdl /DYNAMICBASE /guard:cf /NXCOMPAT")
     message(STATUS "*** MSVC flags: /sdl /DYNAIMCBASE /guard:cf /NXCOMPAT")
 
   elseif(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang|GNU")
     set(NEW_CXX_DEFINITIONS "${NEW_CXX_DEFINITIONS} -D_GLIBCXX_ASSERTIONS")
     message(STATUS "*** GLIBC++ Assertions (vector[], string[], ...) enabled")
 
-    set(NEW_COMPILE_OPTIONS
-        "${NEW_COMPILE_OPTIONS} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3")
-    message(STATUS "*** g++/clang _FORTIFY_SOURCE=3 enabled")
+    if(NOT
+       "${CMAKE_BUILD_TYPE}"
+       STREQUAL
+       "Debug")
+      set(NEW_COMPILE_OPTIONS "${NEW_COMPILE_OPTIONS} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3")
+      message(STATUS "*** g++/clang _FORTIFY_SOURCE=3 enabled")
+    endif()
 
     #    check_cxx_compiler_flag(-fpie PIE)
     #if(PIE)
