@@ -3,6 +3,7 @@ find_package(spdlog CONFIG)
 find_package(docopt CONFIG)
 find_package(lodepng CONFIG)
 find_package(nlohmann_json CONFIG)
+find_package(CLI11 CONFIG)
 
 # Generic test that uses conan libs
 add_executable(

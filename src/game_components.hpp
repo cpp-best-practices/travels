@@ -30,10 +30,12 @@ struct Location
   std::function<bool(const Game &, Point, Direction)> can_enter;
 };
 
+
+
 struct Character
 {
   Point map_location{};
-  lefticus::geometry::Camera<float> camera;
+  lefticus::raycaster::Camera<float> camera;
   std::function<void(Vector2D_Span<Color> &, const Game &, Point)> draw;
 };
 
@@ -42,6 +44,7 @@ struct Game_Map
 {
   explicit Game_Map(const Size size) : locations{ size } {}
   Vector2D<Location> locations;
+  std::map<std::string, Point> location_names;
 
   std::vector<Tile_Set> tile_sets;
 
@@ -62,11 +65,11 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json);
 
 using Variable = std::variant<double, std::int64_t, std::string, bool>;
 
-template<typename Comparitor> struct Variable_Comparison
+template<typename Comparator> struct Variable_Comparison
 {
-  Comparitor comparitor;
+  Comparator comparator;
 
-  bool operator()(const Game &game) const { return comparitor(game); }
+  bool operator()(const Game &game) const { return comparator(game); }
 };
 
 template<typename T> Variable_Comparison(T t) -> Variable_Comparison<T>;
@@ -74,13 +77,13 @@ template<typename T> Variable_Comparison(T t) -> Variable_Comparison<T>;
 
 template<typename LHS, typename RHS> auto operator&&(Variable_Comparison<LHS> lhs, Variable_Comparison<RHS> rhs)
 {
-  return Variable_Comparison{ [lhs = std::move(lhs.comparitor), rhs = std::move(rhs.comparitor)](
+  return Variable_Comparison{ [lhs = std::move(lhs.comparator), rhs = std::move(rhs.comparator)](
                                 const Game &game) { return lhs(game) && rhs(game); } };
 }
 
 template<typename LHS, typename RHS> auto operator||(Variable_Comparison<LHS> lhs, Variable_Comparison<RHS> rhs)
 {
-  return Variable_Comparison{ [lhs = std::move(lhs.comparitor), rhs = std::move(rhs.comparitor)](
+  return Variable_Comparison{ [lhs = std::move(lhs.comparator), rhs = std::move(rhs.comparator)](
                                 const Game &game) { return lhs(game) || rhs(game); } };
 }
 
@@ -106,14 +109,14 @@ struct Menu
 
     template<typename Compare>
     MenuItem(std::string text_, std::string message_, Variable_Comparison<Compare> comp)
-      : MenuItem(std::move(text_), std::move(message_), std::function<bool(const Game &)>(std::move(comp.comparitor)))
+      : MenuItem(std::move(text_), std::move(message_), std::function<bool(const Game &)>(std::move(comp.comparator)))
     {}
 
     MenuItem(std::string text_, std::function<void(Game &)> action_, std::function<bool(const Game &)> visible_ = {});
 
     template<typename Compare>
     MenuItem(std::string text_, std::function<void(Game &)> action_, Variable_Comparison<Compare> comp)
-      : MenuItem(std::move(text_), std::move(action_), std::function<bool(const Game &)>(std::move(comp.comparitor)))
+      : MenuItem(std::move(text_), std::move(action_), std::function<bool(const Game &)>(std::move(comp.comparator)))
     {}
   };
 
@@ -134,7 +137,7 @@ struct Game
 
 
   std::map<std::string, Game_Map> maps;
-  std::map<std::string, std::vector<lefticus::geometry::Segment<float>>> maps_3d;
+  std::map<std::string, std::vector<lefticus::raycaster::Segment<float>>> maps_3d;
 
   Character player;
   std::function<void(Game &)> start_game;

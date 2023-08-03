@@ -88,10 +88,10 @@ void draw(Bitmap &viewport, const Game &game)
 void draw_3d(Bitmap &viewport, const Game &game)
 {
   if (game.maps_3d.contains(game.current_map)) {
-    lefticus::geometry::render(viewport,
+    lefticus::raycaster::render(viewport,
       viewport.pixels.size().width,
       viewport.pixels.size().height,
-      std::span<const lefticus::geometry::Segment<float>>(game.maps_3d.at(game.current_map)),
+      std::span<const lefticus::raycaster::Segment<float>>(game.maps_3d.at(game.current_map)),
       game.player.camera);
   }
 }
@@ -254,7 +254,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
               return;
             }
           } else {
-            const auto walls = std::span<const lefticus::geometry::Segment<float>>(game.maps_3d.at(game.current_map));
+            const auto walls = std::span<const lefticus::raycaster::Segment<float>>(game.maps_3d.at(game.current_map));
             if (current_event == ftxui::Event::ArrowUp) {
               game.player.camera.try_move(.1f, walls);
             } else if (current_event == ftxui::Event::ArrowDown) {

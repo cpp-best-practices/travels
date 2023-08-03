@@ -126,11 +126,31 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
           ++cur_y;
         }
       }
+
+      for (const auto &object : layer["objects"]) {
+
+        const bool point = object["point"];
+
+        if (point) {
+
+          const double x = object["x"];
+          const double y = object["y"];
+
+          const auto map_x = static_cast<std::size_t>(x) % tile_size.width;
+          const auto map_y = static_cast<std::size_t>(y) % tile_size.height;
+
+          const std::string name = object["name"];
+
+          map.location_names[name] = Point{map_x, map_y};
+        }
+      }
+
     }
   }
 
 
   for (const auto &[point, tile_data] : points) {
+    // each tile location has its own draw function
     map.locations.at(point).draw = [tiles = tile_data](
                                      Vector2D_Span<Color> &pixels, const Game &game, Point, Layer layer) {
       const auto &tile_sets = game.get_current_map().tile_sets;

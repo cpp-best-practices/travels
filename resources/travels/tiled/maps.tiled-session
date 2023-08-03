@@ -18,10 +18,10 @@
         },
         "tiles/Map.tmj": {
             "scale": 4,
-            "selectedLayer": 2,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 113.75,
-                "y": 111
+                "x": 123.125,
+                "y": 89.375
             }
         },
         "tiles/Map.tmx": {
@@ -36,8 +36,8 @@
             "scale": 12.904166666666667,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 27.975460122699385,
-                "y": 32.00516628995803
+                "x": 32.00516628995802,
+                "y": 32.04391346464321
             }
         }
     },
@@ -54,12 +54,14 @@
     "map.width": 8,
     "openFiles": [
         "tiles/8x8 fantasytiles.tsj",
-        "tiles/Map.tmj"
+        "tiles/Map.tmj",
+        "tiles/Store.tmj"
     ],
     "project": "maps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
         "tiles/8x8 fantasytiles.tsj",
+        "tiles/Store.tmj",
         "tiles/Map.tmj",
         "tiles/Map.tmx",
         "tiles/8x8 fantasytiles.tsx"

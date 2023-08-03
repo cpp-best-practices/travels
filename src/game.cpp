@@ -81,11 +81,11 @@ Game make_game(const std::vector<std::filesystem::path> &search_directories)
 )");
 
 
-  retval.maps_3d.emplace("maze", lefticus::geometry::make_map<float>(maze));
+  retval.maps_3d.emplace("maze", lefticus::raycaster::make_map<float>(maze));
 
 
   Character player;
-  player.map_location = { 14, 17 };// NOLINT Magic Number
+  player.map_location = { 22, 11 };// NOLINT Magic Number
   player.draw =
     [](Vector2D_Span<Color> &pixels, [[maybe_unused]] const Game &game, [[maybe_unused]] Point map_location) {
       const auto &tile = game.maps.at("main").tile_sets.front().at(98);// NOLINT magic number
