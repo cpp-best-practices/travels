@@ -32,25 +32,34 @@ namespace lefticus::travels {
 
 void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &map)
 {
+  viewport.clear();
   const auto num_wide = viewport.pixels.size().width / game.tile_size.width;
   const auto num_high = viewport.pixels.size().height / game.tile_size.height;
 
   const auto x_offset = num_wide / 2;
   const auto y_offset = num_high / 2;
 
-  const auto min_x = x_offset;
-  const auto min_y = y_offset;
+  const auto x1 = x_offset;
+  const auto y1 = y_offset;
 
-  const auto max_x = map.locations.size().width - x_offset - (num_wide % 2);
-  const auto max_y = map.locations.size().height - y_offset - (num_high % 2);
+  const auto x2 = map.locations.size().width - x_offset - (num_wide % 2);
+  const auto y2 = map.locations.size().height - y_offset - (num_high % 2);
 
-  const auto center_map_location =
-    Point{ std::clamp(map_center.x, min_x, max_x), std::clamp(map_center.y, min_y, max_y) };
+  const auto min_x = std::min(x1, x2);
+  const auto max_x = std::max(x1, x2);
 
-  const auto upper_left_map_location = center_map_location - Point{ min_x, min_y };
+  const auto min_y = std::min(y1, y2);
+  const auto max_y = std::max(y1, y2);
 
-  for (std::size_t cur_x = 0; cur_x < num_wide; ++cur_x) {
-    for (std::size_t cur_y = 0; cur_y < num_high; ++cur_y) {
+  // I don't like this code. It needs to be cleaned up and made so a small map will center
+  const auto center_map_location = Point{ std::clamp(map_center.x, min_x, max_x), std::clamp(map_center.y, min_y, max_y) };
+
+  const auto upper_left_map_location =
+    center_map_location - Point{ num_wide > map.locations.size().width? center_map_location.x : min_x,
+                                           num_high > map.locations.size().height ? center_map_location.y : min_y };
+
+  for (std::size_t cur_x = 0; cur_x < std::min(num_wide, map.locations.size().width); ++cur_x) {
+    for (std::size_t cur_y = 0; cur_y < std::min(num_high, map.locations.size().height); ++cur_y) {
       auto span = Vector2D_Span<Color>(
         Point{ cur_x * game.tile_size.width, cur_y * game.tile_size.width }, game.tile_size, viewport.pixels);
       const auto map_location = Point{ cur_x, cur_y } + upper_left_map_location;
@@ -68,8 +77,8 @@ void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &
   game.player.draw(character_span, game, game.player.map_location);
 
 
-  for (std::size_t cur_x = 0; cur_x < num_wide; ++cur_x) {
-    for (std::size_t cur_y = 0; cur_y < num_high; ++cur_y) {
+  for (std::size_t cur_x = 0; cur_x < std::min(num_wide, map.locations.size().width); ++cur_x) {
+    for (std::size_t cur_y = 0; cur_y < std::min(num_high, map.locations.size().height); ++cur_y) {
       auto span = Vector2D_Span<Color>(
         Point{ cur_x * game.tile_size.width, cur_y * game.tile_size.width }, game.tile_size, viewport.pixels);
       const auto map_location = Point{ cur_x, cur_y } + upper_left_map_location;
@@ -91,7 +100,7 @@ void draw_3d(Bitmap &viewport, const Game &game)
     lefticus::raycaster::render(viewport,
       viewport.pixels.size().width,
       viewport.pixels.size().height,
-      std::span<const lefticus::raycaster::Segment<float>>(game.maps_3d.at(game.current_map)),
+      std::span<const lefticus::raycaster::Segment<float>>(game.maps_3d.at(game.current_map).map.segments),
       game.player.camera);
   }
 }
@@ -200,7 +209,7 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
 
   // this should probably have a `bitmap` helper function that does what you expect
   // similar to the other parts of FTXUI
-  auto bm = std::make_shared<Bitmap>(Size{ 64, 40 });// NOLINT magic numbers
+  auto bm = std::make_shared<Bitmap>(Size{ 80, 56 });// NOLINT magic numbers
   auto small_bm = std::make_shared<Bitmap>(Size{ 6, 6 });// NOLINT magic numbers
 
   double fps = 0;
@@ -222,6 +231,8 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
 
     game.clock = game_clock;
+
+    char last_3d_location = ' ';
 
     while (!events.empty()) {
       const auto current_event = events.front();
@@ -254,7 +265,8 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
               return;
             }
           } else {
-            const auto walls = std::span<const lefticus::raycaster::Segment<float>>(game.maps_3d.at(game.current_map));
+            const auto walls =
+              std::span<const lefticus::raycaster::Segment<float>>(game.maps_3d.at(game.current_map).map.segments);
             if (current_event == ftxui::Event::ArrowUp) {
               game.player.camera.try_move(.1f, walls);
             } else if (current_event == ftxui::Event::ArrowDown) {
@@ -264,6 +276,15 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
             } else if (current_event == ftxui::Event::ArrowRight) {
               game.player.camera.rotate(.1f);
             }
+
+            const auto new_3d_location =
+              game.get_current_map_3d().map.get_first_intersection(game.player.camera.location).value_or(' ');
+            if (new_3d_location != last_3d_location) {
+              const auto action = game.get_current_map_3d().enter_actions.find(new_3d_location);
+              if (action != game.get_current_map_3d().enter_actions.end()) { action->second(game, new_3d_location); }
+              last_3d_location = new_3d_location;
+            }
+
             return;
           }
         }
@@ -327,19 +348,23 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
     last_time = new_time;
 
 
-    ftxui::Elements text_components;
-    text_components.push_back(ftxui::text("Frame: " + std::to_string(counter)));
-    text_components.push_back(
-      ftxui::text(std::format("Location: {{{},{}}}", game.player.map_location.x, game.player.map_location.y)));
+    auto make_text_components = [&] {
+      ftxui::Elements text_components;
+      text_components.push_back(ftxui::text("Frame: " + std::to_string(counter)));
+      text_components.push_back(
+        ftxui::text(std::format("Location: {{{},{}}}", game.player.map_location.x, game.player.map_location.y)));
 
-    for (const auto &variable : game.display_variables) {
-      if (game.variables.contains(variable)) {
-        text_components.push_back(ftxui::text(std::format("{}: {}", variable, to_string(game.variables.at(variable)))));
+      for (const auto &variable : game.display_variables) {
+        if (game.variables.contains(variable)) {
+          text_components.push_back(
+            ftxui::text(std::format("{}: {}", variable, to_string(game.variables.at(variable)))));
+        }
       }
-    }
+      return text_components;
+    };
 
     // now actually draw the game elements
-    return ftxui::vbox({ ftxui::hbox({ bm | ftxui::border, ftxui::vbox(std::move(text_components)) | ftxui::border }),
+    return ftxui::vbox({ ftxui::hbox({ bm | ftxui::border, ftxui::vbox(make_text_components()) | ftxui::border | ftxui::flex }),
       ftxui::text("Message: " + game.last_message) | ftxui::border });
   };
 

@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "tiles/Map.tmj",
+    "activeFile": "tiles/8x8 fantasytiles.tsj",
     "expandedProjectPaths": [
         "tiles"
     ],
@@ -16,12 +16,23 @@
             "scaleInDock": 3,
             "scaleInEditor": 5.5
         },
-        "tiles/Map.tmj": {
-            "scale": 4,
-            "selectedLayer": 3,
+        "tiles/Home.tmj": {
+            "scale": 12.904166666666667,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 123.125,
-                "y": 89.375
+                "x": 36.112366806587026,
+                "y": 24.06199547949629
+            }
+        },
+        "tiles/Map.tmj": {
+            "expandedObjectLayers": [
+                7
+            ],
+            "scale": 5.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 184,
+                "y": 75
             }
         },
         "tiles/Map.tmx": {
@@ -34,10 +45,21 @@
         },
         "tiles/Store.tmj": {
             "scale": 12.904166666666667,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 32.00516628995802,
-                "y": 32.04391346464321
+                "x": 51.53374233128834,
+                "y": 33.28382305456894
+            }
+        },
+        "tiles/Tencin.tmj": {
+            "expandedObjectLayers": [
+                6
+            ],
+            "scale": 12.904166666666667,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 36.112366806587026,
+                "y": 24.06199547949629
             }
         }
     },
@@ -60,9 +82,9 @@
     "project": "maps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
-        "tiles/8x8 fantasytiles.tsj",
         "tiles/Store.tmj",
         "tiles/Map.tmj",
+        "tiles/8x8 fantasytiles.tsj",
         "tiles/Map.tmx",
         "tiles/8x8 fantasytiles.tsx"
     ],

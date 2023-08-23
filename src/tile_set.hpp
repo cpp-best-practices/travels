@@ -13,10 +13,6 @@ namespace lefticus::travels {
 
 struct Tile_Set
 {
-  struct Tile_Properties
-  {
-    bool passable = false;
-  };
 
   Tile_Set(const std::filesystem::path &image, Size tile_size_, std::size_t start_id_)
     : data{ load_png(image) }, tile_size{ tile_size_ },
@@ -38,7 +34,6 @@ struct Tile_Set
     return at(Point{ x, y });
   }
 
-  std::map<std::size_t, Tile_Properties> properties;
 
 private:
   Vector2D<Color> data;

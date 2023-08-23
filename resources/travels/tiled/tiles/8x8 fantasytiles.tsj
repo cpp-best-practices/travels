@@ -1,12 +1,12 @@
 { "columns":26,
  "image":"8x8 fantasytiles.png",
- "imageheight":112,
+ "imageheight":192,
  "imagewidth":208,
  "margin":0,
  "name":"8x8 fantasytiles",
  "spacing":0,
- "tilecount":364,
- "tiledversion":"1.8.4",
+ "tilecount":624,
+ "tiledversion":"1.10.1",
  "tileheight":8,
  "tiles":[
         {
@@ -600,7 +600,7 @@
                 {
                  "name":"passable",
                  "type":"bool",
-                 "value":false
+                 "value":true
                 }]
         }, 
         {
@@ -843,7 +843,7 @@
                 {
                  "name":"passable",
                  "type":"bool",
-                 "value":false
+                 "value":true
                 }]
         }, 
         {
@@ -1653,7 +1653,7 @@
                 {
                  "name":"passable",
                  "type":"bool",
-                 "value":false
+                 "value":true
                 }]
         }, 
         {
@@ -1662,7 +1662,7 @@
                 {
                  "name":"passable",
                  "type":"bool",
-                 "value":false
+                 "value":true
                 }]
         }, 
         {
@@ -1671,7 +1671,7 @@
                 {
                  "name":"passable",
                  "type":"bool",
-                 "value":false
+                 "value":true
                 }]
         }, 
         {
@@ -2160,7 +2160,7 @@
      "vflip":false
     },
  "type":"tileset",
- "version":"1.8",
+ "version":"1.10",
  "wangsets":[
         {
          "colors":[

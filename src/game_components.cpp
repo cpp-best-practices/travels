@@ -14,7 +14,7 @@
 
 namespace lefticus::travels {
 
-Game_Map load_tiled_map(const std::filesystem::path &map_json, const std::vector<std::filesystem::path> &search_paths)
+Game_Map load_tiled_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths)
 {
   if (map_json.is_absolute()) {
     spdlog::warn("Passed an absolute map_json path and a set of search paths, that doesn't make sense");
@@ -60,21 +60,6 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
       const auto tsj = load_json(parent_path / tsj_path);
       const std::filesystem::path tsj_image_path = tsj["image"];
       result.emplace_back(parent_path / tsj_image_path, tile_size, start_gid);
-
-      for (const auto &tile : tsj["tiles"]) {
-        const std::size_t tile_id = tile["id"];
-
-        bool passable = true;
-
-        if (tile.contains("properties")) {
-          for (const auto &property : tile["properties"]) {
-            // cppcheck-suppress useStlAlgorithm
-            if (property["name"] == "passable") { passable = property["value"]; }
-          }
-        }
-
-        result.back().properties[start_gid + tile_id] = Tile_Set::Tile_Properties{ .passable = passable };
-      }
     }
     return result;
   }();
@@ -92,7 +77,29 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
   std::map<Point, std::vector<Layer_Info>> points;
 
   for (const auto &layer : map_file["layers"]) {
-    if (layer["type"] == "tilelayer" && layer["visible"] == true) {
+    if (layer["type"] == "objectgroup") {
+      spdlog::debug("Object group loaded");
+
+      for (const auto &object : layer["objects"]) {
+
+        const bool point = object["point"];
+
+        if (point) {
+
+          const double x = object["x"];
+          const double y = object["y"];
+
+          const auto map_x = static_cast<std::size_t>(std::ceil(x)) / tile_size.width;
+          const auto map_y = static_cast<std::size_t>(std::ceil(y)) / tile_size.height;
+
+          const std::string name = object["name"];
+
+          spdlog::debug("Loaded named point: '{}' ({},{})", name, map_x, map_y);
+
+          map.location_names[name] = Point{ map_x, map_y };
+        }
+      }
+    } else if (layer["type"] == "tilelayer" && layer["visible"] == true) {
       // std::size_t x = layer["x"];
       // std::size_t y = layer["y"];
       const std::size_t width = layer["width"];
@@ -111,40 +118,23 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
         }
       }
 
-      std::size_t cur_x = 0;
-      std::size_t cur_y = 0;
-      for (const auto &tile : layer["data"]) {
+      if (layer["type"] == "tilelayer") {
+        std::size_t cur_x = 0;
+        std::size_t cur_y = 0;
+        for (const auto &tile : layer["data"]) {
 
-        const std::size_t tileid = tile;
+          const std::size_t tileid = tile;
 
-        points[Point{ cur_x, cur_y }].push_back(
-          Layer_Info{ .tileid = tileid, .background = background, .foreground = foreground });
+          points[Point{ cur_x, cur_y }].push_back(
+            Layer_Info{ .tileid = tileid, .background = background, .foreground = foreground });
 
-        ++cur_x;
-        if (cur_x == width) {
-          cur_x = 0;
-          ++cur_y;
+          ++cur_x;
+          if (cur_x == width) {
+            cur_x = 0;
+            ++cur_y;
+          }
         }
       }
-
-      for (const auto &object : layer["objects"]) {
-
-        const bool point = object["point"];
-
-        if (point) {
-
-          const double x = object["x"];
-          const double y = object["y"];
-
-          const auto map_x = static_cast<std::size_t>(x) % tile_size.width;
-          const auto map_y = static_cast<std::size_t>(y) % tile_size.height;
-
-          const std::string name = object["name"];
-
-          map.location_names[name] = Point{map_x, map_y};
-        }
-      }
-
     }
   }
 
@@ -177,11 +167,9 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
     };
 
 
-    map.locations.at(point).can_enter = [tiles = tile_data](const Game &game, Point, Direction) {
-      const auto &tile_sets = game.get_current_map().tile_sets;
+    map.locations.at(point).can_enter = [tiles = tile_data](const Game &, Point, Direction) {
       return std::all_of(tiles.begin(), tiles.end(), [&](const auto &tile) {
-        return tile.foreground || tile.background || tile.tileid == 0
-               || tile_sets[0].properties.at(tile.tileid).passable;
+        return tile.foreground || tile.background || tile.tileid == 0;
       });
     };
   }

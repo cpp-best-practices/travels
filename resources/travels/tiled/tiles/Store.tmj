@@ -3,18 +3,72 @@
  "infinite":false,
  "layers":[
         {
+         "data":[93, 93, 93, 93, 93, 93, 93, 93,
+            93, 93, 93, 93, 93, 93, 93, 93,
+            93, 93, 93, 93, 93, 93, 93, 93,
+            93, 93, 93, 93, 93, 93, 93, 93,
+            93, 93, 93, 93, 93, 93, 93, 93,
+            93, 93, 93, 93, 93, 93, 93, 93,
+            93, 93, 93, 93, 93, 93, 93, 93,
+            93, 93, 93, 93, 93, 93, 93, 93],
+         "height":8,
+         "id":5,
+         "name":"Tile Layer 4",
+         "opacity":1,
+         "properties":[
+                {
+                 "name":"passable",
+                 "type":"bool",
+                 "value":true
+                }],
+         "type":"tilelayer",
+         "visible":true,
+         "width":8,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":6,
+         "name":"Object Layer 1",
+         "objects":[
+                {
+                 "height":0,
+                 "id":1,
+                 "name":"start_location",
+                 "point":true,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":19.683564740071,
+                 "y":27.2005166289958
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
          "data":[192, 193, 193, 193, 193, 193, 193, 194,
             218, 219, 271, 271, 271, 271, 271, 220,
-            218, 112, 189, 112, 112, 112, 112, 220,
-            218, 112, 189, 112, 112, 112, 112, 220,
-            218, 112, 189, 112, 112, 112, 112, 250,
-            218, 188, 188, 112, 112, 112, 112, 272,
-            218, 112, 112, 112, 112, 112, 112, 112,
+            218, 0, 0, 0, 0, 0, 0, 220,
+            218, 0, 0, 0, 0, 0, 0, 220,
+            218, 0, 0, 0, 0, 0, 0, 250,
+            218, 0, 0, 0, 0, 0, 0, 272,
+            218, 0, 0, 0, 0, 0, 0, 0,
             244, 245, 245, 245, 245, 245, 245, 246],
          "height":8,
          "id":1,
          "name":"Tile Layer 1",
          "opacity":1,
+         "properties":[
+                {
+                 "name":"passable",
+                 "type":"bool",
+                 "value":false
+                }],
          "type":"tilelayer",
          "visible":true,
          "width":8,
@@ -23,16 +77,16 @@
         }, 
         {
          "data":[0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 161, 186, 187, 161, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
-            0, 125, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0],
          "height":8,
-         "id":3,
-         "name":"Tile Layer 2",
+         "id":4,
+         "name":"Tile Layer 3",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
@@ -40,11 +94,11 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":4,
- "nextobjectid":1,
+ "nextlayerid":7,
+ "nextobjectid":2,
  "orientation":"orthogonal",
  "renderorder":"right-down",
- "tiledversion":"1.8.4",
+ "tiledversion":"1.10.1",
  "tileheight":8,
  "tilesets":[
         {
@@ -53,6 +107,6 @@
         }],
  "tilewidth":8,
  "type":"map",
- "version":"1.8",
+ "version":"1.10",
  "width":8
 }

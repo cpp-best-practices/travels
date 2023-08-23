@@ -39,6 +39,12 @@ struct Character
   std::function<void(Vector2D_Span<Color> &, const Game &, Point)> draw;
 };
 
+struct Game_3D_Map
+{
+  lefticus::raycaster::Map<float> map;
+  std::map<char, std::function<void (Game &, char)>> enter_actions;
+
+};
 
 struct Game_Map
 {
@@ -59,7 +65,7 @@ struct Game_Map
   }
 };
 
-Game_Map load_tiled_map(const std::filesystem::path &map_json, const std::vector<std::filesystem::path> &search_paths);
+Game_Map load_tiled_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths);
 Game_Map load_tiled_map(const std::filesystem::path &map_json);
 
 
@@ -137,7 +143,7 @@ struct Game
 
 
   std::map<std::string, Game_Map> maps;
-  std::map<std::string, std::vector<lefticus::raycaster::Segment<float>>> maps_3d;
+  std::map<std::string, Game_3D_Map> maps_3d;
 
   Character player;
   std::function<void(Game &)> start_game;
