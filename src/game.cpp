@@ -9,29 +9,20 @@ Game_Map make_map(std::span<const std::filesystem::path> search_directories)
 {
   auto map = load_tiled_map("travels/tiled/tiles/Map.tmj", search_directories);
 
-  map.locations.at(map.location_names["maze_right"]).enter_action// NOLINT magic numbers
-    = [](Game &game, Point, Direction) {
-        game.current_map = "maze";
-        game.current_map_type = Game::Map_Type::Map_3D;
-        game.player.camera.location = game.get_current_map_3d().map.get_named_location('1')->center();
-        game.player.camera.direction = 2.f * std::numbers::pi_v<float> * 3.f / 4.f;
-      };
+  map.locations.at(map.location_names["maze_right"]).enter_action = [](Game &game, Point, Direction) {
+    game.teleport_to_3d("maze", "1", Direction::West);
+  };
 
-  map.locations.at(map.location_names["maze_left"]).enter_action// NOLINT magic numbers
-    = [](Game &game, Point, Direction) {
-        game.current_map = "maze";
-        game.current_map_type = Game::Map_Type::Map_3D;
-        game.player.camera.location = game.get_current_map_3d().map.get_named_location('2')->center();
-        game.player.camera.direction = 2.f * std::numbers::pi_v<float> * 1.f / 4.f;
-      };
+  map.locations.at(map.location_names["maze_left"]).enter_action = [](Game &game, Point, Direction) {
+    game.teleport_to_3d("maze", "2", Direction::East);
+  };
 
   map.locations.at(map.location_names["tencin_entrance"]).enter_action = [](Game &game, Point, Direction) {
-    game.current_map = "tencin";
-    game.player.map_location = game.get_current_map().location_names["entry_location"];
+    game.teleport_to_2d("tencin", "entry_location");
   };
+
   map.locations.at(map.location_names["home_entrance"]).enter_action = [](Game &game, Point, Direction) {
-    game.current_map = "home";
-    game.player.map_location = game.get_current_map().location_names["entry_location"];
+    game.teleport_to_2d("home", "entry_location");
   };
 
   return map;
@@ -40,11 +31,9 @@ Game_Map make_map(std::span<const std::filesystem::path> search_directories)
 Game_Map make_home(const std::vector<std::filesystem::path> &search_directories)
 {
   auto map = load_tiled_map("travels/tiled/tiles/Home.tmj", search_directories);
-  map.locations.at(map.location_names["exit_location"]).enter_action
-    = [](Game &game, Point, Direction) {
-        game.current_map = "main";
-        game.player.map_location = game.get_current_map().location_names["home_exit"];
-      };
+  map.locations.at(map.location_names["exit_location"]).enter_action = [](Game &game, Point, Direction) {
+    game.teleport_to_2d("main", "home_exit");
+  };
 
   return map;
 }
@@ -53,15 +42,14 @@ Game_Map make_tencins_home(const std::vector<std::filesystem::path> &search_dire
 {
   auto map = load_tiled_map("travels/tiled/tiles/Tencin.tmj", search_directories);
   map.locations.at(map.location_names["exit_location"]).enter_action = [](Game &game, Point, Direction) {
-    game.current_map = "main";
-    game.player.map_location = game.get_current_map().location_names["tencin_exit"];
+    game.teleport_to_2d("main", "tencin_exit");
   };
 
   return map;
 }
 
 
-  Game_Map make_store(const std::vector<std::filesystem::path> &search_directories)
+Game_Map make_store(const std::vector<std::filesystem::path> &search_directories)
 {
   auto map = load_tiled_map("travels/tiled/tiles/Store.tmj", search_directories);
 
@@ -105,9 +93,7 @@ Game make_game(const std::vector<std::filesystem::path> &search_directories)
   retval.display_variables.emplace_back("Cash");
 
 
-
-  const auto make_maze = []
-  {
+  const auto make_maze = [] {
     constexpr static std::string_view maze_string(R"(
  ############
  #          #
@@ -124,16 +110,12 @@ w 2#  #
 )");
 
     Game_3D_Map maze{ lefticus::raycaster::make_map<float>(maze_string), {} };
-    maze.enter_actions.emplace('w', [](Game &game, char){
-      game.current_map = "main";
-      game.current_map_type = Game::Map_Type::Map_2D;
-      game.player.map_location =game.get_current_map().location_names["maze_left_exit"];
-      });
+    maze.enter_actions.emplace('w', [](Game &game, char) {
+      game.teleport_to_2d("main", "maze_left_exit");
+    });
 
     maze.enter_actions.emplace('e', [](Game &game, char) {
-      game.current_map = "main";
-      game.current_map_type = Game::Map_Type::Map_2D;
-      game.player.map_location = game.get_current_map().location_names["maze_right_exit"];
+      game.teleport_to_2d("main", "maze_right_exit");
     });
 
     return maze;
@@ -160,7 +142,7 @@ w 2#  #
   retval.player = player;
 
   retval.popup_message =
-R"(I'm so bored, and I've gone through all of the books in my collection!
+    R"(I'm so bored, and I've gone through all of the books in my collection!
 
 I'd like to visit my new neighbor to the west, but my parents left and locked the gate.
 

@@ -164,11 +164,40 @@ struct Game
 
   bool exit_game = false;
 
+  void teleport_to_2d(std::string map_name, const std::string &location_name)
+  {
+    current_map = std::move(map_name);
+    current_map_type = Map_Type::Map_2D;
+    player.map_location = get_current_map().location_names[location_name];
+  }
+
+  void teleport_to_3d(std::string map_name, const std::string &location_name, const Direction direction)
+  {
+    current_map = std::move(map_name);
+    current_map_type = Map_Type::Map_3D;
+    player.camera.location = get_current_map_3d().map.get_named_location(location_name.at(0))->center();
+
+    player.camera.direction = [&] {
+      switch (direction) {
+      case Direction::East:
+        return 2.f * std::numbers::pi_v<float> * 1.f / 4.f;
+      case Direction::West:
+        return 2.f * std::numbers::pi_v<float> * 3.f / 4.f;
+      case Direction::North:
+        return 0.f;
+      case Direction::South:
+        return std::numbers::pi_v<float>;
+      }
+
+      return 0.f; // we don't know this direction
+    }();
+  }
+
   [[nodiscard]] Game_Map &get_current_map() { return maps.at(current_map); }
   [[nodiscard]] const Game_Map &get_current_map() const { return maps.at(current_map); }
 
-  [[nodiscard]] auto &get_current_map_3d() { return maps_3d.at(current_map); }
-  [[nodiscard]] const auto &get_current_map_3d() const { return maps_3d.at(current_map); }
+  [[nodiscard]] Game_3D_Map &get_current_map_3d() { return maps_3d.at(current_map); }
+  [[nodiscard]] const Game_3D_Map &get_current_map_3d() const { return maps_3d.at(current_map); }
 
   [[nodiscard]] bool has_popup_message() const { return !popup_message.empty(); }
 
