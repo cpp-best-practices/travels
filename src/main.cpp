@@ -21,6 +21,8 @@
 #include "print.hpp"
 #include "size.hpp"
 
+#include "scripted_game.hpp"
+
 // This file will be generated automatically when you run the CMake
 // configuration step. It creates a namespace called `travels`. You can modify
 // the source template at `configured_files/config.hpp.in`.
@@ -511,7 +513,36 @@ int main(int argc, const char **argv)
     spdlog::set_level(spdlog::level::trace);
 
     // to start the lessons, comment out this line
-    auto game = lefticus::travels::make_game(resource_search_directories());
+
+    //auto game = lefticus::travels::make_game(resource_search_directories());
+
+    Scripted_Game game{ resource_search_directories()};
+    game.eval(R"(
+(load_tiled_map game "main" "travels/tiled/tiles/Map.tmj")
+(load_tiled_map game "tencin" "travels/tiled/tiles/Tencin.tmj")
+(load_tiled_map game "home" "travels/tiled/tiles/Home.tmj")
+
+(load_3d_map game "maze" "travels/maze.txt")
+
+(define North 0.0)
+(define East 1.570)
+(define South 3.141)
+(define West 4.712)
+
+(set_location_action game "tencin" "exit_location" (lambda (game) (teleport_to_2d game "main" "tencin_exit")))
+(set_location_action game "home" "exit_location" (lambda (game) (teleport_to_2d game "main" "home_exit")))
+
+(set_location_action game "main" "tencin_entrance" (lambda (game) (teleport_to_2d game "tencin" "entry_location")))
+(set_location_action game "main" "home_entrance" (lambda (game) (teleport_to_2d game "home" "entry_location")))
+
+(set_location_action game "main" "maze_right" (lambda (game) (teleport_to_3d game "maze" "1" West)))
+(set_location_action game "main" "maze_left" (lambda (game) (teleport_to_3d game "maze" "2" East)))
+
+(set_3d_location_action game "maze" "w" (lambda (game) (teleport_to_2d game "main" "maze_left_exit")))
+(set_3d_location_action game "maze" "e" (lambda (game) (teleport_to_2d game "main" "maze_right_exit")))
+
+(teleport_to_2d game "home" "start_location")
+)");
 
     // we want to take over as the main spdlog sink
     auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
@@ -519,7 +550,7 @@ int main(int argc, const char **argv)
     spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
 
     spdlog::set_level(spdlog::level::trace);
-    lefticus::travels::play_game(game, log_sink);
+    lefticus::travels::play_game(game.game, log_sink);
   } catch (const std::exception &e) {
     lefticus::print("Unhandled exception in main: {}", e.what());
   }

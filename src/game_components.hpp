@@ -31,7 +31,6 @@ struct Location
 };
 
 
-
 struct Character
 {
   Point map_location{};
@@ -42,8 +41,7 @@ struct Character
 struct Game_3D_Map
 {
   lefticus::raycaster::Map<float> map;
-  std::map<char, std::function<void (Game &, char)>> enter_actions;
-
+  std::map<char, std::function<void(Game &, char)>> enter_actions;
 };
 
 struct Game_Map
@@ -68,6 +66,8 @@ struct Game_Map
 Game_Map load_tiled_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths);
 Game_Map load_tiled_map(const std::filesystem::path &map_json);
 
+Game_3D_Map load_3d_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths);
+Game_3D_Map load_3d_map(const std::filesystem::path &map_json);
 
 using Variable = std::variant<double, std::int64_t, std::string, bool>;
 
@@ -135,11 +135,7 @@ struct Menu
 
 struct Game
 {
-  enum struct Map_Type
-  {
-    Map_2D,
-    Map_3D
-  };
+  enum struct Map_Type { Map_2D, Map_3D };
 
 
   std::map<std::string, Game_Map> maps;
@@ -171,13 +167,17 @@ struct Game
     player.map_location = get_current_map().location_names[location_name];
   }
 
-  void teleport_to_3d(std::string map_name, const std::string &location_name, const Direction direction)
+  void teleport_to_3d(std::string map_name, const std::string &location_name, const float direction)
   {
     current_map = std::move(map_name);
     current_map_type = Map_Type::Map_3D;
     player.camera.location = get_current_map_3d().map.get_named_location(location_name.at(0))->center();
+    player.camera.direction = direction;
+  }
 
-    player.camera.direction = [&] {
+  void teleport_to_3d(std::string map_name, const std::string &location_name, const Direction direction)
+  {
+    const auto angle = [&] {
       switch (direction) {
       case Direction::East:
         return 2.f * std::numbers::pi_v<float> * 1.f / 4.f;
@@ -188,9 +188,10 @@ struct Game
       case Direction::South:
         return std::numbers::pi_v<float>;
       }
+      return 0.f;// we don't know this direction
+    };
 
-      return 0.f; // we don't know this direction
-    }();
+    return teleport_to_3d(std::move(map_name), location_name, angle());
   }
 
   [[nodiscard]] Game_Map &get_current_map() { return maps.at(current_map); }

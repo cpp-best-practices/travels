@@ -14,20 +14,47 @@
 
 namespace lefticus::travels {
 
-Game_Map load_tiled_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths)
+std::filesystem::path find_map_file(const std::filesystem::path &path,
+  std::span<const std::filesystem::path> search_paths)
 {
-  if (map_json.is_absolute()) {
-    spdlog::warn("Passed an absolute map_json path and a set of search paths, that doesn't make sense");
-    return load_tiled_map(map_json);
+  if (path.is_absolute()) {
+    spdlog::warn("Passed an absolute path and a set of search paths, that doesn't make sense");
+    return path;
   }
 
   for (const auto &search_path : search_paths) {
     spdlog::debug("Trying search path '{}'", search_path.string());
-    const auto path = search_path / map_json;
-    if (std::error_code error; std::filesystem::is_regular_file(path, error)) { return load_tiled_map(path); }
+    const auto possible_path = search_path / path;
+    if (std::error_code error; std::filesystem::is_regular_file(possible_path, error)) { return possible_path; }
   }
 
-  throw std::runtime_error(std::format("Unable to find map in any search path: {}", map_json.string()));
+  throw std::runtime_error(std::format("Unable to find map in any search path: {}", path.string()));
+}
+
+Game_3D_Map load_3d_map(const std::filesystem::path &map)
+{
+  auto load_file = [](const auto &path) -> std::string {
+    std::ifstream in(path);
+    std::ostringstream sstr;
+    sstr << in.rdbuf();
+    return sstr.str();
+  };
+
+  return Game_3D_Map{ lefticus::raycaster::make_map<float>(load_file(map)), {} };
+}
+
+
+  Game_3D_Map load_3d_map(const std::filesystem::path &map,
+  std::span<const std::filesystem::path> search_paths)
+  {
+  return load_3d_map(find_map_file(map, search_paths));
+  }
+
+
+
+Game_Map load_tiled_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths)
+{
+  return load_tiled_map(find_map_file(map_json, search_paths));
 }
 
 

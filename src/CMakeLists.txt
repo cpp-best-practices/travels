@@ -19,7 +19,8 @@ add_executable(
   game.hpp
   game_components.hpp
   tile_set.hpp
-  game_components.cpp)
+  game_components.cpp
+        scripted_game.hpp)
 
 target_link_libraries(travels PRIVATE travels_options travels_warnings)
 
@@ -31,6 +32,7 @@ target_link_system_libraries(
   lodepng
   nlohmann_json::nlohmann_json
   libraycaster::libraycaster
+  cons_expr::cons_expr
   ftxui::screen
   ftxui::dom
   ftxui::component)

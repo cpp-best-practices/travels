@@ -1,7 +1,6 @@
 #include "game.hpp"
 #include "bitmap.hpp"
 #include "game_components.hpp"
-#include <set>
 
 namespace lefticus::travels {
 
@@ -83,8 +82,6 @@ Game make_game(const std::vector<std::filesystem::path> &search_directories)
   retval.maps.emplace("home", make_home(search_directories));
   retval.maps.emplace("tencin", make_tencins_home(search_directories));
 
-  retval.current_map = "home";
-  retval.current_map_type = Game::Map_Type::Map_2D;
 
   retval.tile_size = Size{ 8, 8 };// NOLINT Magic Number
 
@@ -140,6 +137,8 @@ w 2#  #
 
 
   retval.player = player;
+
+  retval.teleport_to_2d("home", "start_location");
 
   retval.popup_message =
     R"(I'm so bored, and I've gone through all of the books in my collection!
