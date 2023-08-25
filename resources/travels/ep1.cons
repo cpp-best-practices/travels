@@ -1,0 +1,30 @@
+(load_tiled_map game "main" "travels/tiled/tiles/Map.tmj")
+(load_tiled_map game "tencin" "travels/tiled/tiles/Tencin.tmj")
+(load_tiled_map game "home" "travels/tiled/tiles/Home.tmj")
+
+(load_3d_map game "maze" "travels/maze.txt")
+
+(define North 0.0)
+(define East 1.570)
+(define South 3.141)
+(define West 4.712)
+
+(define 2d_teleporter (lambda (map location) (lambda () (teleport_to_2d game map location))))
+(define 3d_teleporter (lambda (map location direction) (lambda () (teleport_to_3d game map location direction))))
+
+(define set_action (lambda (map location action) (set_location_action game map location action)))
+
+(set_action "tencin" "exit_location" (2d_teleporter "main" "tencin_exit"))
+(set_action "home" "exit_location" (2d_teleporter "main" "home_exit"))
+
+(set_location_action game "main" "tencin_entrance" (2d_teleporter "tencin" "entry_location"))
+(set_location_action game "main" "home_entrance" (2d_teleporter "home" "entry_location"))
+
+(set_location_action game "main" "maze_right" (3d_teleporter "maze" "1" West))
+(set_location_action game "main" "maze_left" (3d_teleporter "maze" "2" East))
+
+(set_3d_location_action game "maze" "w" (2d_teleporter "main" "maze_left_exit"))
+(set_3d_location_action game "maze" "e" (2d_teleporter "main" "maze_right_exit"))
+
+(teleport_to_2d game "home" "start_location")
+

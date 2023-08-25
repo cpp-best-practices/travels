@@ -54,10 +54,11 @@ void draw(Bitmap &viewport, Point map_center, const Game &game, const Game_Map &
   const auto max_y = std::max(y1, y2);
 
   // I don't like this code. It needs to be cleaned up and made so a small map will center
-  const auto center_map_location = Point{ std::clamp(map_center.x, min_x, max_x), std::clamp(map_center.y, min_y, max_y) };
+  const auto center_map_location =
+    Point{ std::clamp(map_center.x, min_x, max_x), std::clamp(map_center.y, min_y, max_y) };
 
-  const auto upper_left_map_location =
-    center_map_location - Point{ num_wide > map.locations.size().width? center_map_location.x : min_x,
+  const auto upper_left_map_location = center_map_location
+                                       - Point{ num_wide > map.locations.size().width ? center_map_location.x : min_x,
                                            num_high > map.locations.size().height ? center_map_location.y : min_y };
 
   for (std::size_t cur_x = 0; cur_x < std::min(num_wide, map.locations.size().width); ++cur_x) {
@@ -366,8 +367,9 @@ void play_game(Game &game, std::shared_ptr<log_sink<std::mutex>> log_sink)// NOL
     };
 
     // now actually draw the game elements
-    return ftxui::vbox({ ftxui::hbox({ bm | ftxui::border, ftxui::vbox(make_text_components()) | ftxui::border | ftxui::flex }),
-      ftxui::text("Message: " + game.last_message) | ftxui::border });
+    return ftxui::vbox(
+      { ftxui::hbox({ bm | ftxui::border, ftxui::vbox(make_text_components()) | ftxui::border | ftxui::flex }),
+        ftxui::text("Message: " + game.last_message) | ftxui::border });
   };
 
 
@@ -502,6 +504,8 @@ int main(int argc, const char **argv)
 
     bool show_version = false;
     app.add_flag("--version", show_version, "Show version information");
+    std::filesystem::path filename = "";
+    app.add_option("-f,--file", filename, "cons_expr game script to execute")->required();
 
     CLI11_PARSE(app, argc, argv);
 
@@ -512,37 +516,14 @@ int main(int argc, const char **argv)
 
     spdlog::set_level(spdlog::level::trace);
 
-    // to start the lessons, comment out this line
+    Scripted_Game game{ resource_search_directories() };
 
-    //auto game = lefticus::travels::make_game(resource_search_directories());
-
-    Scripted_Game game{ resource_search_directories()};
-    game.eval(R"(
-(load_tiled_map game "main" "travels/tiled/tiles/Map.tmj")
-(load_tiled_map game "tencin" "travels/tiled/tiles/Tencin.tmj")
-(load_tiled_map game "home" "travels/tiled/tiles/Home.tmj")
-
-(load_3d_map game "maze" "travels/maze.txt")
-
-(define North 0.0)
-(define East 1.570)
-(define South 3.141)
-(define West 4.712)
-
-(set_location_action game "tencin" "exit_location" (lambda () (teleport_to_2d game "main" "tencin_exit")))
-(set_location_action game "home" "exit_location" (lambda () (teleport_to_2d game "main" "home_exit")))
-
-(set_location_action game "main" "tencin_entrance" (lambda () (teleport_to_2d game "tencin" "entry_location")))
-(set_location_action game "main" "home_entrance" (lambda () (teleport_to_2d game "home" "entry_location")))
-
-(set_location_action game "main" "maze_right" (lambda () (teleport_to_3d game "maze" "1" West)))
-(set_location_action game "main" "maze_left" (lambda () (teleport_to_3d game "maze" "2" East)))
-
-(set_3d_location_action game "maze" "w" (lambda () (teleport_to_2d game "main" "maze_left_exit")))
-(set_3d_location_action game "maze" "e" (lambda () (teleport_to_2d game "main" "maze_right_exit")))
-
-(teleport_to_2d game "home" "start_location")
-)");
+    game.eval([&]() {
+      std::ifstream in(filename);
+      std::ostringstream sstr;
+      sstr << in.rdbuf();
+      return sstr.str();
+    }());
 
     // we want to take over as the main spdlog sink
     auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
