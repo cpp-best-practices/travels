@@ -42,8 +42,8 @@ struct Scripted_Game
 
 
     map.enter_actions.emplace(location_char,
-      [this, callable = engine.make_callable<void(Scripted_Game *)>(callable)](
-        lefticus::travels::Game &, char) { callable(engine, this); });
+      [this, callable = engine.make_callable<void()>(callable)](
+        lefticus::travels::Game &, char) { callable(engine); });
   }
 
   void set_location_action(engine_type::string_type map_name,
@@ -52,8 +52,8 @@ struct Scripted_Game
   {
     auto &map = game.maps.at(std::string(engine.strings.view(map_name)));
     map.locations.at(map.location_names[std::string(engine.strings.view(location_name))]).enter_action =
-      [this, callable = engine.make_callable<void(Scripted_Game *)>(callable)](
-        lefticus::travels::Game &, lefticus::travels::Point, lefticus::travels::Direction) { callable(engine, this); };
+      [this, callable = engine.make_callable<void ()>(callable)](
+        lefticus::travels::Game &, lefticus::travels::Point, lefticus::travels::Direction) { callable(engine); };
   }
 
   void eval(const std::string_view script)

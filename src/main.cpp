@@ -529,17 +529,17 @@ int main(int argc, const char **argv)
 (define South 3.141)
 (define West 4.712)
 
-(set_location_action game "tencin" "exit_location" (lambda (game) (teleport_to_2d game "main" "tencin_exit")))
-(set_location_action game "home" "exit_location" (lambda (game) (teleport_to_2d game "main" "home_exit")))
+(set_location_action game "tencin" "exit_location" (lambda () (teleport_to_2d game "main" "tencin_exit")))
+(set_location_action game "home" "exit_location" (lambda () (teleport_to_2d game "main" "home_exit")))
 
-(set_location_action game "main" "tencin_entrance" (lambda (game) (teleport_to_2d game "tencin" "entry_location")))
-(set_location_action game "main" "home_entrance" (lambda (game) (teleport_to_2d game "home" "entry_location")))
+(set_location_action game "main" "tencin_entrance" (lambda () (teleport_to_2d game "tencin" "entry_location")))
+(set_location_action game "main" "home_entrance" (lambda () (teleport_to_2d game "home" "entry_location")))
 
-(set_location_action game "main" "maze_right" (lambda (game) (teleport_to_3d game "maze" "1" West)))
-(set_location_action game "main" "maze_left" (lambda (game) (teleport_to_3d game "maze" "2" East)))
+(set_location_action game "main" "maze_right" (lambda () (teleport_to_3d game "maze" "1" West)))
+(set_location_action game "main" "maze_left" (lambda () (teleport_to_3d game "maze" "2" East)))
 
-(set_3d_location_action game "maze" "w" (lambda (game) (teleport_to_2d game "main" "maze_left_exit")))
-(set_3d_location_action game "maze" "e" (lambda (game) (teleport_to_2d game "main" "maze_right_exit")))
+(set_3d_location_action game "maze" "w" (lambda () (teleport_to_2d game "main" "maze_left_exit")))
+(set_3d_location_action game "maze" "e" (lambda () (teleport_to_2d game "main" "maze_right_exit")))
 
 (teleport_to_2d game "home" "start_location")
 )");
