@@ -105,6 +105,18 @@
                  "width":0,
                  "x":51.8437197287698,
                  "y":52.0762027768809
+                }, 
+                {
+                 "height":0,
+                 "id":4,
+                 "name":"examine_sword",
+                 "point":true,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":27.897965773329,
+                 "y":17.8237003551824
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -113,7 +125,7 @@
          "y":0
         }],
  "nextlayerid":8,
- "nextobjectid":4,
+ "nextobjectid":5,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

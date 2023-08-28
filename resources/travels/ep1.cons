@@ -17,6 +17,15 @@
 (set_action "tencin" "exit_location" (2d_teleporter "main" "tencin_exit"))
 (set_action "home" "exit_location" (2d_teleporter "main" "home_exit"))
 
+(set_action "home" "examine_sword" (lambda () (
+  set_menu game 
+    (
+      ("look at sword" "it's an awesome sword!" (action (lambda () (set_boolean game "looked_at_sword" true))))
+      ("examine sword" "Yup, it's really awesome." (test (lambda () (get_boolean game "looked_at_sword"))))
+    )
+  )
+))
+
 (set_location_action game "main" "tencin_entrance" (2d_teleporter "tencin" "entry_location"))
 (set_location_action game "main" "home_entrance" (2d_teleporter "home" "entry_location"))
 
@@ -27,4 +36,4 @@
 (set_3d_location_action game "maze" "e" (2d_teleporter "main" "maze_right_exit"))
 
 (teleport_to_2d game "home" "start_location")
-
+(show_popup game "I really want to go out and visit the new neighbor, but my parents locked the gate when they left! So now I have to see if I can remember the path through the woods that starts in the north east of our property...")
