@@ -67,6 +67,17 @@ function(travels_configure_wasm_target target)
       set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS "${SHELL_FILE}")
     endif()
 
+    # Copy service worker for COOP/COEP headers (needed for GitHub Pages)
+    set(COI_WORKER "${CMAKE_SOURCE_DIR}/web/coi-serviceworker.min.js")
+    if(EXISTS "${COI_WORKER}")
+      add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${COI_WORKER}"
+          "$<TARGET_FILE_DIR:${target}>/coi-serviceworker.min.js"
+        COMMENT "Copying coi-serviceworker.min.js for COOP/COEP headers"
+      )
+    endif()
+
     # Set output suffix to .html
     set_target_properties(${target} PROPERTIES SUFFIX ".html")
 

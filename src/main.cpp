@@ -621,6 +621,9 @@ std::string get_script_path() {
 int main()
 {
   try {
+    // Set up custom log sink BEFORE loading scripts to avoid output to stdout
+    auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
     spdlog::set_level(spdlog::level::trace);
 
 #ifdef __EMSCRIPTEN__
@@ -643,13 +646,6 @@ int main()
       sstr << in.rdbuf();
       return sstr.str();
     }());
-
-    // we want to take over as the main spdlog sink
-    auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
-
-    spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
-
-    spdlog::set_level(spdlog::level::trace);
     lefticus::travels::play_game(game.game, log_sink, [&game](std::string_view script) { return game.eval(script); });
   } catch (const std::exception &e) {
     lefticus::print("Unhandled exception in main: {}", e.what());
