@@ -3,9 +3,12 @@ find_package(spdlog CONFIG)
 find_package(docopt CONFIG)
 find_package(lodepng CONFIG)
 find_package(nlohmann_json CONFIG)
-find_package(CLI11 CONFIG)
 
-# Generic test that uses conan libs
+# CLI11 not needed for WASM builds
+if(NOT EMSCRIPTEN)
+  find_package(CLI11 CONFIG)
+endif()
+
 add_executable(
   travels
   main.cpp
@@ -20,14 +23,12 @@ add_executable(
   game_components.hpp
   tile_set.hpp
   game_components.cpp
-        scripted_game.hpp)
+  scripted_game.hpp)
 
 target_link_libraries(travels PRIVATE travels_options travels_warnings)
 
-target_link_system_libraries(
-  travels
-  PRIVATE
-  CLI11::CLI11
+# Common libraries (work in both native and WASM)
+set(TRAVELS_COMMON_LIBS
   spdlog::spdlog
   lodepng
   nlohmann_json::nlohmann_json
@@ -36,5 +37,17 @@ target_link_system_libraries(
   ftxui::screen
   ftxui::dom
   ftxui::component)
+
+# Conditional linking based on build target
+if(EMSCRIPTEN)
+  target_link_system_libraries(travels PRIVATE ${TRAVELS_COMMON_LIBS})
+  travels_configure_wasm_target(travels)
+else()
+  target_link_system_libraries(
+    travels
+    PRIVATE
+    CLI11::CLI11
+    ${TRAVELS_COMMON_LIBS})
+endif()
 
 target_include_directories(travels PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")

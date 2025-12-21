@@ -2,8 +2,17 @@
 #include <filesystem>
 #include <functional>
 #include <iostream>
+#include <fstream>
 
+#ifndef TRAVELS_WASM_BUILD
+#include <thread>
 #include <CLI/CLI.hpp>
+#endif
+
+#ifdef TRAVELS_WASM_BUILD
+#include <emscripten.h>
+#endif
+
 #include <ftxui/component/component.hpp>// for Slider
 #include <ftxui/component/screen_interactive.hpp>// for ScreenInteractive
 
@@ -332,7 +341,13 @@ void play_game(Game &game,
     }
   };
 
+#ifdef TRAVELS_WASM_BUILD
+  // FixedSize required for Emscripten - Fullscreen() has rendering issues
+  // See: https://github.com/ArthurSonzogni/FTXUI/issues/432
+  auto screen = ftxui::ScreenInteractive::FixedSize(80, 50);
+#else
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
+#endif
 
   int counter = 0;
 
@@ -526,6 +541,11 @@ void play_game(Game &game,
   });
 
 
+#ifdef TRAVELS_WASM_BUILD
+  // In WASM, FTXUI uses Emscripten's main loop via screen.Loop()
+  // No separate thread needed - FTXUI's WASM implementation handles this
+  screen.Loop(main_renderer);
+#else
   std::atomic<bool> refresh_ui_continue = true;
 
   // This thread exists to make sure that the event queue has an event to
@@ -542,12 +562,17 @@ void play_game(Game &game,
 
   refresh_ui_continue = false;
   refresh_ui.join();
+#endif
 }
 }// namespace lefticus::travels
 
 
 std::vector<std::filesystem::path> resource_search_directories()
 {
+#ifdef TRAVELS_WASM_BUILD
+  // In WASM, resources are embedded at /resources via --embed-file
+  return { "/resources" };
+#else
   std::vector<std::filesystem::path> results;
 
   auto current_path = std::filesystem::current_path();
@@ -562,7 +587,78 @@ std::vector<std::filesystem::path> resource_search_directories()
   results.push_back(std::filesystem::path(travels::cmake::source_dir) / "resources");
 
   return results;
+#endif
 }
+
+#ifdef TRAVELS_WASM_BUILD
+
+// JavaScript helper to get URL parameter
+// Usage: travels.html?script=ep1 loads /resources/travels/ep1.cons
+// Uses MAIN_THREAD_EM_ASM to access window.location from worker thread
+char* get_url_param(const char* name) {
+  // MAIN_THREAD_EM_ASM_PTR runs on the main browser thread, which has window access
+  return (char*)MAIN_THREAD_EM_ASM_PTR({
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get(UTF8ToString($0));
+    if (!value) return 0;
+    const len = lengthBytesUTF8(value) + 1;
+    const ptr = _malloc(len);
+    stringToUTF8(value, ptr, len);
+    return ptr;
+  }, name);
+}
+
+std::string get_script_path() {
+  char* param = get_url_param("script");
+  if (param) {
+    std::string script_name(param);
+    free(param);// NOLINT(cppcoreguidelines-no-malloc)
+    return "/resources/travels/" + script_name + ".cons";
+  }
+  return "/resources/travels/ep1.cons";  // Default script
+}
+
+int main()
+{
+  try {
+    spdlog::set_level(spdlog::level::trace);
+
+#ifdef __EMSCRIPTEN__
+    spdlog::info("__EMSCRIPTEN__ is defined in main.cpp");
+#else
+    spdlog::warn("__EMSCRIPTEN__ is NOT defined in main.cpp!");
+#endif
+
+    Scripted_Game game{ resource_search_directories() };
+
+    const std::string script_path = get_script_path();
+    spdlog::info("Loading script: {}", script_path);
+
+    game.eval([&]() {
+      std::ifstream in(script_path);
+      if (!in.good()) {
+        throw std::runtime_error("Failed to load script: " + script_path);
+      }
+      std::ostringstream sstr;
+      sstr << in.rdbuf();
+      return sstr.str();
+    }());
+
+    // we want to take over as the main spdlog sink
+    auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
+
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
+
+    spdlog::set_level(spdlog::level::trace);
+    lefticus::travels::play_game(game.game, log_sink, [&game](std::string_view script) { return game.eval(script); });
+  } catch (const std::exception &e) {
+    lefticus::print("Unhandled exception in main: {}", e.what());
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}
+
+#else
 
 int main(int argc, const char **argv)
 {
@@ -603,3 +699,5 @@ int main(int argc, const char **argv)
     lefticus::print("Unhandled exception in main: {}", e.what());
   }
 }
+
+#endif

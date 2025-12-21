@@ -14,7 +14,7 @@ void print(std::FILE *stream, std::format_string<Args...> fmt, Args &&...args)
 
 template<class... Args> void print(std::format_string<Args...> fmt, Args &&...args)
 {
-  print(stdout, fmt, std::forward<Args>(args)...);
+  lefticus::print(stdout, fmt, std::forward<Args>(args)...);
 }
 
 template<class... Args> void println(std::FILE *stream, std::format_string<Args...> fmt, Args &&...args)

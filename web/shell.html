@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travels - A Text-Based Adventure</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a2e;
+            color: #eee;
+            font-family: monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #container {
+            max-width: 900px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+
+        #terminal {
+            margin: 0 auto;
+            border: 2px solid #e94560;
+            background-color: #0f0f23;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .spinner {
+            border: 4px solid #16213e;
+            border-top: 4px solid #e94560;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #16213e;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        #instructions h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        #instructions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        #instructions li {
+            margin: 5px 0;
+        }
+
+        kbd {
+            background-color: #0f0f23;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #e94560;
+        }
+
+        #error {
+            display: none;
+            background-color: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Travels</h1>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>Loading game...</p>
+            <p id="progress"></p>
+        </div>
+
+        <div id="terminal" class="hidden"></div>
+
+        <div id="error"></div>
+
+        <div id="instructions" class="hidden">
+            <h3>Controls</h3>
+            <ul>
+                <li><kbd>Arrow Keys</kbd> - Move / Navigate menus</li>
+                <li><kbd>Enter</kbd> - Select / Interact</li>
+                <li><kbd>Escape</kbd> - Back / Close menu</li>
+                <li><kbd>L</kbd> - View event log</li>
+                <li><kbd>P</kbd> - Open script prompt</li>
+            </ul>
+            <p style="margin-top: 15px; color: #888; font-size: 12px;">
+                Tip: Use <code>?script=name</code> URL parameter to load different scripts.
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-webgl@0.16.0/lib/xterm-addon-webgl.min.js"></script>
+    <script>
+        // Initialize xterm.js terminal
+        // Use a monospace font with good Unicode block character support
+        var term = new Terminal({
+            cols: 80,
+            rows: 50,
+            theme: {
+                background: '#0f0f23',
+                foreground: '#eee',
+                cursor: '#e94560'
+            },
+            fontFamily: '"DejaVu Sans Mono", "Fira Code", "Consolas", "Monaco", monospace',
+            fontSize: 14,
+            lineHeight: 1.0,
+            cursorBlink: false,
+            convertEol: true,
+            allowTransparency: false
+        });
+
+        var fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+
+        // Try to use WebGL for better rendering (falls back gracefully)
+        try {
+            var webglAddon = new WebglAddon.WebglAddon();
+            webglAddon.onContextLoss(function() {
+                webglAddon.dispose();
+            });
+            term.loadAddon(webglAddon);
+            console.log('WebGL addon loaded');
+        } catch (e) {
+            console.log('WebGL addon not available, using canvas renderer');
+        }
+
+        // Buffers for stdin/stdout/stderr - matching FTXUI's index.mjs approach
+        var stdin_buffer = [];
+        var stdout_buffer = [];
+        var stderr_buffer = [];
+
+        // stdin: return next character or null if empty
+        function stdin() {
+            if (stdin_buffer.length === 0) {
+                return null;
+            }
+            return stdin_buffer.shift();
+        }
+
+        // stdout: buffer bytes, flush on null byte (0)
+        function stdout(code) {
+            if (code === 0) {
+                // Flush buffer to terminal
+                if (stdout_buffer.length > 0) {
+                    var text = new TextDecoder().decode(new Uint8Array(stdout_buffer));
+                    term.write(text);
+                    stdout_buffer = [];
+                }
+            } else {
+                stdout_buffer.push(code);
+            }
+        }
+
+        // stderr: buffer bytes, flush on null or newline
+        function stderr(code) {
+            if (code === 0 || code === 10) {
+                if (stderr_buffer.length > 0) {
+                    var text = new TextDecoder().decode(new Uint8Array(stderr_buffer));
+                    console.error(text);
+                    stderr_buffer = [];
+                }
+            } else {
+                stderr_buffer.push(code);
+            }
+        }
+
+        var Module = {
+            preRun: [function() {
+                // Set up terminal
+                var terminalDiv = document.getElementById('terminal');
+                terminalDiv.classList.remove('hidden');
+                term.open(terminalDiv);
+
+                // Clear terminal and reset cursor position
+                term.clear();
+                term.write('\x1b[H\x1b[2J');
+
+                // Capture keyboard input -> stdin buffer
+                term.onData(function(data) {
+                    for (var i = 0; i < data.length; i++) {
+                        stdin_buffer.push(data.charCodeAt(i));
+                    }
+                });
+
+                // Also capture binary data for special keys
+                term.onBinary(function(data) {
+                    for (var i = 0; i < data.length; i++) {
+                        stdin_buffer.push(data.charCodeAt(i));
+                    }
+                });
+
+                // Initialize Emscripten filesystem with our stdin/stdout/stderr
+                FS.init(stdin, stdout, stderr);
+            }],
+            postRun: [function() {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('instructions').classList.remove('hidden');
+
+                // Set up resize observer for FTXUI's resize callback
+                if (window.Module._ftxui_on_resize) {
+                    var resizeObserver = new ResizeObserver(function() {
+                        fitAddon.fit();
+                        window.Module._ftxui_on_resize(term.cols, term.rows);
+                    });
+                    resizeObserver.observe(document.getElementById('terminal'));
+                }
+            }],
+            print: function(text) {
+                console.log(text);
+            },
+            printErr: function(text) {
+                console.error(text);
+            },
+            setStatus: function(text) {
+                var progress = document.getElementById('progress');
+                if (progress) {
+                    progress.textContent = text || '';
+                }
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                if (left) {
+                    Module.setStatus('Loading... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')');
+                } else {
+                    Module.setStatus('');
+                }
+            },
+            onRuntimeInitialized: function() {
+                console.log('WASM runtime initialized');
+            }
+        };
+
+        Module.setStatus('Downloading...');
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            var errorDiv = document.getElementById('error');
+            errorDiv.textContent = 'Error: ' + message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').classList.add('hidden');
+            console.error('Error:', message, source, lineno, colno, error);
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+            var errorDiv = document.getElementById('error');
+            errorDiv.textContent = 'Error: ' + event.reason;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').classList.add('hidden');
+            console.error('Unhandled rejection:', event.reason);
+        });
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

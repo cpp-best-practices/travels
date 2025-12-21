@@ -1,0 +1,75 @@
+# cmake/Emscripten.cmake
+# Emscripten/WebAssembly build configuration
+
+# Detect if we're building with Emscripten
+if(EMSCRIPTEN)
+  message(STATUS "Emscripten build detected - configuring for WebAssembly")
+
+  # Set WASM build flag
+  set(TRAVELS_WASM_BUILD ON CACHE BOOL "Building for WebAssembly" FORCE)
+
+  # Disable features not supported in WASM
+  set(travels_ENABLE_SANITIZER_ADDRESS OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_SANITIZER_LEAK OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_SANITIZER_UNDEFINED OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_SANITIZER_THREAD OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_SANITIZER_MEMORY OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_HARDENING OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_CLANG_TIDY OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_CPPCHECK OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_IPO OFF CACHE BOOL "" FORCE)
+  set(travels_ENABLE_CACHE OFF CACHE BOOL "" FORCE)
+
+  # Resource embedding path
+  set(TRAVELS_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/resources" CACHE PATH "Resources directory")
+
+else()
+  set(TRAVELS_WASM_BUILD OFF CACHE BOOL "Building for WebAssembly" FORCE)
+endif()
+
+# Function to apply WASM settings to a target
+function(travels_configure_wasm_target target)
+  if(EMSCRIPTEN)
+    target_compile_definitions(${target} PRIVATE TRAVELS_WASM_BUILD=1)
+
+    # Emscripten link flags
+    # Note: -pthread compile/link flags are set globally in CMakeLists.txt
+    target_link_options(${target} PRIVATE
+      # Enable pthreads - REQUIRED by FTXUI's WASM implementation
+      "-sUSE_PTHREADS=1"
+      "-sPROXY_TO_PTHREAD=1"
+      "-sPTHREAD_POOL_SIZE=4"
+      # Enable asyncify for emscripten_sleep and async operations
+      "-sASYNCIFY=1"
+      "-sASYNCIFY_STACK_SIZE=65536"
+      # Memory configuration
+      "-sALLOW_MEMORY_GROWTH=1"
+      "-sINITIAL_MEMORY=33554432"
+      # Embed resources into WASM binary
+      "--embed-file=${TRAVELS_RESOURCES_DIR}/travels@/resources/travels"
+      # Environment - need both web and worker for pthread support
+      "-sENVIRONMENT=web,worker"
+      # Export runtime methods for JavaScript interop
+      "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','stringToUTF8','lengthBytesUTF8']"
+      # Export malloc/free for MAIN_THREAD_EM_ASM usage
+      "-sEXPORTED_FUNCTIONS=['_main','_malloc','_free']"
+      # Debug: enable assertions for better error messages
+      "-sASSERTIONS=1"
+    )
+
+    # Use custom HTML shell if it exists
+    set(SHELL_FILE "${CMAKE_SOURCE_DIR}/web/shell.html")
+    if(EXISTS "${SHELL_FILE}")
+      target_link_options(${target} PRIVATE
+        "--shell-file=${SHELL_FILE}"
+      )
+      # Add shell file as a link dependency so changes trigger rebuild
+      set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS "${SHELL_FILE}")
+    endif()
+
+    # Set output suffix to .html
+    set_target_properties(${target} PROPERTIES SUFFIX ".html")
+
+    message(STATUS "Configured ${target} for WebAssembly with embedded resources from ${TRAVELS_RESOURCES_DIR}/travels")
+  endif()
+endfunction()

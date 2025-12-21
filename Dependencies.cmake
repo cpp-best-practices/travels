@@ -39,8 +39,11 @@ function(travels_setup_dependencies)
     cpmaddpackage("gh:catchorg/Catch2@3.7.0")
   endif()
 
-  if(NOT TARGET CLI11::CLI11)
-    cpmaddpackage("gh:CLIUtils/CLI11@2.4.2")
+  # CLI11 not needed for WASM builds (no command line in browser)
+  if(NOT EMSCRIPTEN)
+    if(NOT TARGET CLI11::CLI11)
+      cpmaddpackage("gh:CLIUtils/CLI11@2.4.2")
+    endif()
   endif()
 
   if(NOT TARGET ftxui::screen)

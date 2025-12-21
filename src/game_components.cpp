@@ -81,7 +81,16 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
   auto load_animations = [](const auto &tileset) {
     std::map<std::size_t, Tile_Set::Animation> result;
 
+    if (!tileset.contains("tiles")) {
+      spdlog::debug("No tiles/animations in tileset");
+      return result;
+    }
+
     for (const auto &tile : tileset["tiles"]) {
+      if (!tile.contains("id") || !tile.contains("animation")) {
+        continue;  // Skip tiles without animation data
+      }
+
       const std::size_t id = tile["id"];
 
       Tile_Set::Animation animation;
