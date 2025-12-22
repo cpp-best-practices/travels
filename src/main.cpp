@@ -342,9 +342,7 @@ void play_game(Game &game,
   };
 
 #ifdef TRAVELS_WASM_BUILD
-  // FixedSize required for Emscripten - Fullscreen() has rendering issues
-  // See: https://github.com/ArthurSonzogni/FTXUI/issues/432
-  auto screen = ftxui::ScreenInteractive::FixedSize(80, 50);
+  auto screen = ftxui::ScreenInteractive::FixedSize(80, 50);  // Fullscreen() broken in WASM
 #else
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
 #endif
@@ -542,8 +540,6 @@ void play_game(Game &game,
 
 
 #ifdef TRAVELS_WASM_BUILD
-  // In WASM, FTXUI uses Emscripten's main loop via screen.Loop()
-  // No separate thread needed - FTXUI's WASM implementation handles this
   screen.Loop(main_renderer);
 #else
   std::atomic<bool> refresh_ui_continue = true;
@@ -570,8 +566,7 @@ void play_game(Game &game,
 std::vector<std::filesystem::path> resource_search_directories()
 {
 #ifdef TRAVELS_WASM_BUILD
-  // In WASM, resources are embedded at /resources via --embed-file
-  return { "/resources" };
+  return { "/resources" };  // Embedded via --embed-file
 #else
   std::vector<std::filesystem::path> results;
 
@@ -592,11 +587,8 @@ std::vector<std::filesystem::path> resource_search_directories()
 
 #ifdef TRAVELS_WASM_BUILD
 
-// JavaScript helper to get URL parameter
-// Usage: travels.html?script=ep1 loads /resources/travels/ep1.cons
-// Uses MAIN_THREAD_EM_ASM to access window.location from worker thread
+// Get URL parameter (e.g., ?script=ep1)
 char* get_url_param(const char* name) {
-  // MAIN_THREAD_EM_ASM_PTR runs on the main browser thread, which has window access
   return (char*)MAIN_THREAD_EM_ASM_PTR({
     const params = new URLSearchParams(window.location.search);
     const value = params.get(UTF8ToString($0));
@@ -625,12 +617,6 @@ int main()
     auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
     spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
     spdlog::set_level(spdlog::level::trace);
-
-#ifdef __EMSCRIPTEN__
-    spdlog::info("__EMSCRIPTEN__ is defined in main.cpp");
-#else
-    spdlog::warn("__EMSCRIPTEN__ is NOT defined in main.cpp!");
-#endif
 
     Scripted_Game game{ resource_search_directories() };
 
