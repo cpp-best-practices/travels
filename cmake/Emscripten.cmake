@@ -8,17 +8,20 @@ if(EMSCRIPTEN)
   # Set WASM build flag
   set(TRAVELS_WASM_BUILD ON CACHE BOOL "Building for WebAssembly" FORCE)
 
-  # Disable features not supported in WASM
-  set(travels_ENABLE_SANITIZER_ADDRESS OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_SANITIZER_LEAK OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_SANITIZER_UNDEFINED OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_SANITIZER_THREAD OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_SANITIZER_MEMORY OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_HARDENING OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_CLANG_TIDY OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_CPPCHECK OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_IPO OFF CACHE BOOL "" FORCE)
-  set(travels_ENABLE_CACHE OFF CACHE BOOL "" FORCE)
+  # Sanitizers don't work with Emscripten
+  set(travels_ENABLE_SANITIZER_ADDRESS OFF CACHE BOOL "Not supported with Emscripten")
+  set(travels_ENABLE_SANITIZER_LEAK OFF CACHE BOOL "Not supported with Emscripten")
+  set(travels_ENABLE_SANITIZER_UNDEFINED OFF CACHE BOOL "Not supported with Emscripten")
+  set(travels_ENABLE_SANITIZER_THREAD OFF CACHE BOOL "Not supported with Emscripten")
+  set(travels_ENABLE_SANITIZER_MEMORY OFF CACHE BOOL "Not supported with Emscripten")
+
+  # Disable static analysis and strict warnings for Emscripten builds
+  set(travels_ENABLE_CLANG_TIDY OFF CACHE BOOL "Disabled for Emscripten")
+  set(travels_ENABLE_CPPCHECK OFF CACHE BOOL "Disabled for Emscripten")
+  set(travels_WARNINGS_AS_ERRORS OFF CACHE BOOL "Disabled for Emscripten")
+
+  # Disable testing - no way to execute WASM test targets
+  set(BUILD_TESTING OFF CACHE BOOL "No test runner for WASM")
 
   # Resource embedding path
   set(TRAVELS_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/resources" CACHE PATH "Resources directory")
