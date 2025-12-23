@@ -26,6 +26,13 @@ if(EMSCRIPTEN)
   # Resource embedding path
   set(TRAVELS_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/resources" CACHE PATH "Resources directory")
 
+  # For Emscripten WASM builds, FTXUI requires pthreads
+  # Set these flags early so they propagate to all dependencies
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+
+
 else()
   set(TRAVELS_WASM_BUILD OFF CACHE BOOL "Building for WebAssembly" FORCE)
 endif()

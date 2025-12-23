@@ -24,12 +24,6 @@ project(
 
 include(cmake/PreventInSourceBuilds.cmake)
 
-# For Emscripten WASM builds, FTXUI requires pthreads
-# Set these flags early so they propagate to all dependencies
-if(EMSCRIPTEN)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-endif()
 
 include(cmake/Emscripten.cmake)
 include(ProjectOptions.cmake)
