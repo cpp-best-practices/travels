@@ -589,7 +589,7 @@ std::vector<std::filesystem::path> resource_search_directories()
 
 // Get URL parameter (e.g., ?script=ep1)
 char* get_url_param(const char* name) {
-  return (char*)MAIN_THREAD_EM_ASM_PTR({
+  return reinterpret_cast<char*>(MAIN_THREAD_EM_ASM_PTR({
     const params = new URLSearchParams(window.location.search);
     const value = params.get(UTF8ToString($0));
     if (!value) return 0;
@@ -597,7 +597,7 @@ char* get_url_param(const char* name) {
     const ptr = _malloc(len);
     stringToUTF8(value, ptr, len);
     return ptr;
-  }, name);
+  }, name));
 }
 
 std::string get_script_path() {
