@@ -43,7 +43,6 @@ function(travels_configure_wasm_target target)
     target_compile_definitions(${target} PRIVATE TRAVELS_WASM_BUILD=1)
 
     # Emscripten link flags
-    # Note: -pthread compile/link flags are set globally in CMakeLists.txt
     target_link_options(${target} PRIVATE
       # Enable pthreads - REQUIRED by FTXUI's WASM implementation
       "-sUSE_PTHREADS=1"

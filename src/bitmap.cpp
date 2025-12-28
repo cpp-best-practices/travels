@@ -7,8 +7,6 @@
 namespace lefticus::travels {
 Vector2D<Color> load_png(const std::filesystem::path &filename)
 {
-  spdlog::debug("Loading PNG: {}", filename.string());
-
   std::vector<unsigned char> image;// the raw pixels
   unsigned width{};
   unsigned height{};
