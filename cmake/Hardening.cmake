@@ -6,7 +6,6 @@ macro(
   global
   ubsan_minimal_runtime)
 
-  message(STATUS "** DEBUG: travels_enable_hardening called with target='${target}' global='${global}' ubsan='${ubsan_minimal_runtime}'")
   message(STATUS "** Enabling Hardening (Target ${target}) **")
 
   # Initialize as lists, not strings
@@ -87,7 +86,6 @@ macro(
   message(STATUS "** Hardening Linker Flags: ${NEW_LINK_OPTIONS}")
   message(STATUS "** Hardening Compiler Defines: ${NEW_CXX_DEFINITIONS}")
 
-  message(STATUS "** DEBUG: Checking global='${global}' evaluates to: ${${global}}")
   if(${global})
     message(STATUS "** Setting hardening options globally for all dependencies")
     # Convert lists to space-separated strings for CMAKE_CXX_FLAGS
@@ -100,11 +98,9 @@ macro(
     endforeach()
     string(REPLACE ";" " " NEW_CXX_DEFINITIONS_STR "${DEF_FLAGS}")
 
-    message(STATUS "** DEBUG: Before - CMAKE_CXX_FLAGS = '${CMAKE_CXX_FLAGS}'")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NEW_COMPILE_OPTIONS_STR}" )
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${NEW_LINK_OPTIONS_STR}" )
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NEW_CXX_DEFINITIONS_STR}" )
-    message(STATUS "** DEBUG: After - CMAKE_CXX_FLAGS = '${CMAKE_CXX_FLAGS} ${NEW_COMPILE_OPTIONS_STR} ${NEW_CXX_DEFINITIONS_STR}'")
   else()
     target_compile_options(${target} INTERFACE ${NEW_COMPILE_OPTIONS})
     target_link_options(${target} INTERFACE ${NEW_LINK_OPTIONS})
