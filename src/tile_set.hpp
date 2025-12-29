@@ -23,8 +23,13 @@ struct Tile_Set
     std::vector<Frame> frames;
     [[nodiscard]] std::size_t get_frame(std::chrono::milliseconds clock) const
     {
-      std::chrono::milliseconds animation_length{ 0 };
-      for (const auto &frame : frames) { animation_length += frame.duration; }
+
+      const auto animation_length = std::ranges::fold_left(
+          frames | std::views::transform(std::mem_fn(&Frame::duration)),
+          std::chrono::milliseconds{0},
+          std::plus<>{}
+          );
+
       auto offset = clock % animation_length;
       for (const auto &frame : frames) {
         if (offset <= frame.duration) { return frame.tile_id; }
