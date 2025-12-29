@@ -1,5 +1,5 @@
-#include <lodepng.h>
 #include <format>
+#include <lodepng.h>
 
 #include "bitmap.hpp"
 

@@ -13,22 +13,21 @@ namespace lefticus::travels {
 
 struct Tile_Set
 {
-  struct Animation {
-    struct Frame {
+  struct Animation
+  {
+    struct Frame
+    {
       std::chrono::milliseconds duration;
       std::size_t tile_id;
     };
     std::vector<Frame> frames;
-    [[nodiscard]] std::size_t get_frame(std::chrono::milliseconds clock) const {
-      std::chrono::milliseconds animation_length{0};
-      for (const auto &frame : frames) {
-        animation_length += frame.duration;
-      }
+    [[nodiscard]] std::size_t get_frame(std::chrono::milliseconds clock) const
+    {
+      std::chrono::milliseconds animation_length{ 0 };
+      for (const auto &frame : frames) { animation_length += frame.duration; }
       auto offset = clock % animation_length;
       for (const auto &frame : frames) {
-        if (offset <= frame.duration) {
-          return frame.tile_id;
-        }
+        if (offset <= frame.duration) { return frame.tile_id; }
         offset -= frame.duration;
       }
       // something went wrong
@@ -37,11 +36,13 @@ struct Tile_Set
   };
 
 
-  Tile_Set(const std::filesystem::path &image, Size tile_size_, std::size_t start_id_,
-           std::map<std::size_t, Animation> animations_)
-    : data{ load_png(image) }, tile_size{ tile_size_ },
-      sheet_size{ data.size().width / tile_size.width, data.size().height / tile_size.height }, start_id{ start_id_ },
-      animations{ std::move(animations_) }
+  Tile_Set(const std::filesystem::path &image,
+    Size tile_size_,
+    std::size_t start_id_,
+    std::map<std::size_t, Animation> animations_)
+    : data{ load_png(image) }, tile_size{ tile_size_ }, sheet_size{ data.size().width / tile_size.width,
+        data.size().height / tile_size.height },
+      start_id{ start_id_ }, animations{ std::move(animations_) }
   {}
 
   // gets a view of the tile at a certain location
@@ -54,9 +55,7 @@ struct Tile_Set
   {
     const auto id_to_get = id - start_id;
 
-    if (animations.contains(id_to_get)) {
-      return at(animations.at(id_to_get).get_frame(clock) + start_id);
-    }
+    if (animations.contains(id_to_get)) { return at(animations.at(id_to_get).get_frame(clock) + start_id); }
 
     return at(id);
   }

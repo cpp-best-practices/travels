@@ -26,6 +26,6 @@ template<class... Args> void println(std::format_string<Args...> fmt, Args &&...
 {
   lefticus::println(stdout, fmt, std::forward<Args>(args)...);
 }
-}
+}// namespace lefticus
 
 #endif

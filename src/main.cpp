@@ -1,8 +1,8 @@
 #include <array>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iostream>
-#include <fstream>
 #include <thread>
 
 #include <CLI/CLI.hpp>
@@ -146,7 +146,8 @@ struct Displayed_Menu
 
     for (const auto &item : menu.items) {
       if (!item.visible || item.visible(game)) {
-        menu_lines.push_back(ftxui::Button(item.text, [&game, &item]() { item.action(game); }, Animated()));
+        menu_lines.push_back(ftxui::Button(
+          item.text, [&game, &item]() { item.action(game); }, Animated()));
       }
     }
 
@@ -405,34 +406,32 @@ void play_game(Game &game,
   auto menu_renderer =
     ftxui::Renderer(current_menu.buttons, [&] { return current_menu.buttons->Render() | ftxui::border; });
 
-  auto popup_renderer = ftxui::Renderer(
-    ftxui::Container::Vertical({ clear_popup_button }),
-    [&] {
-      ftxui::Elements paragraphs;
+  auto popup_renderer = ftxui::Renderer(ftxui::Container::Vertical({ clear_popup_button }), [&] {
+    ftxui::Elements paragraphs;
 
-      std::string paragraph;
-      for (const auto character : game.popup_message) {
-        if (character == '\n') {
-          if (paragraph.empty()) {
-            paragraphs.push_back(ftxui::separatorEmpty());
-          } else {
-            paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph));
-            paragraph.clear();
-          }
+    std::string paragraph;
+    for (const auto character : game.popup_message) {
+      if (character == '\n') {
+        if (paragraph.empty()) {
+          paragraphs.push_back(ftxui::separatorEmpty());
         } else {
-          paragraph.push_back(character);
+          paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph));
+          paragraph.clear();
         }
+      } else {
+        paragraph.push_back(character);
       }
+    }
 
-      if (!paragraph.empty()) { paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph)); }
+    if (!paragraph.empty()) { paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph)); }
 
-      paragraphs.push_back(ftxui::separatorEmpty());
+    paragraphs.push_back(ftxui::separatorEmpty());
 
-      paragraphs.push_back(clear_popup_button->Render() | ftxui::center);
+    paragraphs.push_back(clear_popup_button->Render() | ftxui::center);
 
 
-      return ftxui::vbox(paragraphs) | ftxui::border;
-    });
+    return ftxui::vbox(paragraphs) | ftxui::border;
+  });
 
   int selected_log_entry = 0;
   auto log_menu = ftxui::Menu(&log_sink->event_log, &selected_log_entry);
@@ -448,11 +447,9 @@ void play_game(Game &game,
   int selected_script_log = 0;
   ftxui::MenuOption script_log_menu_options;
   ftxui::MenuEntryOption script_log_menu_entry_options;
-  script_log_menu_entry_options.transform=[](const ftxui::EntryState &state) {
+  script_log_menu_entry_options.transform = [](const ftxui::EntryState &state) {
     ftxui::Element e = ftxui::text(state.label);
-    if (state.active && state.focused) {
-      e = e | ftxui::inverted;
-    }
+    if (state.active && state.focused) { e = e | ftxui::inverted; }
     return e;
   };
   script_log_menu_options.entries_option = script_log_menu_entry_options;
@@ -558,7 +555,7 @@ void play_game(Game &game,
 std::vector<std::filesystem::path> resource_search_directories()
 {
 #ifdef TRAVELS_WASM_BUILD
-  return { "/resources" };  // Embedded via --embed-file
+  return { "/resources" };// Embedded via --embed-file
 #else
   std::vector<std::filesystem::path> results;
 
@@ -585,7 +582,7 @@ int main(int argc, const char **argv)
     bool show_version = false;
     app.add_flag("--version", show_version, "Show version information");
 
-    std::filesystem::path filename{"travels/ep1.cons"};
+    std::filesystem::path filename{ "travels/ep1.cons" };
     app.add_option("-f,--file", filename, "cons_expr game script to execute");
 
     CLI11_PARSE(app, argc, argv);
@@ -605,9 +602,7 @@ int main(int argc, const char **argv)
 
     game.eval([&]() {
       std::ifstream in(lefticus::travels::find_resource_file(filename, resource_search_directories()));
-      if (!in.good()) {
-        throw std::runtime_error("Failed to load script: " + filename.string());
-      }
+      if (!in.good()) { throw std::runtime_error("Failed to load script: " + filename.string()); }
       std::ostringstream sstr;
       sstr << in.rdbuf();
       return sstr.str();
