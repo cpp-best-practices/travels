@@ -28,7 +28,7 @@ function(travels_setup_dependencies)
       NAME
       spdlog
       VERSION
-      1.14.1
+      1.16.0
       GITHUB_REPOSITORY
       "gabime/spdlog"
       OPTIONS
@@ -36,12 +36,12 @@ function(travels_setup_dependencies)
   endif()
 
   if(NOT TARGET Catch2::Catch2WithMain)
-    cpmaddpackage("gh:catchorg/Catch2@3.7.0")
+    cpmaddpackage("gh:catchorg/Catch2@3.12.0")
   endif()
 
   # CLI11 used for argument parsing in both native and WASM builds
   if(NOT TARGET CLI11::CLI11)
-    cpmaddpackage("gh:CLIUtils/CLI11@2.4.2")
+    cpmaddpackage("gh:CLIUtils/CLI11@2.6.1")
   endif()
 
   if(NOT TARGET ftxui::screen)
@@ -58,7 +58,7 @@ function(travels_setup_dependencies)
 
 
   if(NOT TARGET nlohmann_json::nlohmann_json)
-    cpmaddpackage("gh:nlohmann/json@3.11.3")
+    cpmaddpackage("gh:nlohmann/json@3.12.0")
   endif()
 
 endfunction()
