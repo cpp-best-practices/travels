@@ -29,9 +29,9 @@ jobs:
       # and your own projects needs
       matrix:
         os:
-          - ubuntu-22.04
-          - macos-13
-          - windows-2022
+          - ubuntu-24.04
+          - macos-15
+          - windows-2025
         compiler:
           # you can specify the version after `-` like "llvm-20.1.0".
           - llvm-20.1.0
@@ -49,7 +49,7 @@ jobs:
 
         exclude:
           # mingw is determined by this author to be too buggy to support
-          - os: windows-2022
+          - os: windows-2025
             compiler: gcc-15
 
         include:
@@ -63,12 +63,12 @@ jobs:
             enable_ipo: Off
             gcov_executable: "llvm-cov gcov"
 
-          - os: macos-13
+          - os: macos-15
             enable_ipo: Off
             enable_cppcheck: OFF
             enable_clang_tidy: OFF
 
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             enable_clang_tidy: On
             enable_cppcheck: On
 
@@ -79,7 +79,7 @@ jobs:
             package_generator: TBZ2
 
           # This exists solely to make sure a non-multiconfig build works
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             compiler: gcc-15
             generator: "Unix Makefiles"
             build_type: Debug
@@ -91,7 +91,7 @@ jobs:
 
 
           # Windows msvc builds
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Debug
@@ -101,7 +101,7 @@ jobs:
             enable_cppcheck: Off
 
 
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Release
@@ -111,7 +111,7 @@ jobs:
             enable_cppcheck: Off
 
 
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Debug
@@ -120,7 +120,7 @@ jobs:
             enable_cppcheck: Off
 
 
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Release
@@ -130,7 +130,7 @@ jobs:
             enable_cppcheck: Off
 
 
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Release
