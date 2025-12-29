@@ -145,7 +145,7 @@
         // Use a monospace font with good Unicode block character support
         var term = new Terminal({
             cols: 80,
-            rows: 50,
+            rows: 35,
             theme: {
                 background: '#0f0f23',
                 foreground: '#eee',
@@ -187,10 +187,13 @@
             return stdin_buffer.shift();
         }
 
-        // stdout: buffer bytes, flush on null byte (0)
+        // stdout: buffer bytes, flush on null byte (0) or newline (10)
         function stdout(code) {
-            if (code === 0) {
+            if (code === 0 || code === 10) {
                 // Flush buffer to terminal
+                if (code === 10) {
+                    stdout_buffer.push(code);  // Include the newline
+                }
                 if (stdout_buffer.length > 0) {
                     var text = new TextDecoder().decode(new Uint8Array(stdout_buffer));
                     term.write(text);
@@ -207,6 +210,8 @@
                 if (stderr_buffer.length > 0) {
                     var text = new TextDecoder().decode(new Uint8Array(stderr_buffer));
                     console.error(text);
+                    // Also write to visible terminal so users can see errors
+                    term.write(text);
                     stderr_buffer = [];
                 }
             } else {

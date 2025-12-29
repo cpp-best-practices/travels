@@ -32,6 +32,10 @@ if(EMSCRIPTEN)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
 
+  # Enable native WebAssembly exception handling
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fwasm-exceptions")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fwasm-exceptions")
+
 
 else()
   set(TRAVELS_WASM_BUILD OFF CACHE BOOL "Building for WebAssembly" FORCE)
@@ -62,6 +66,8 @@ function(travels_configure_wasm_target target)
       "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','stringToUTF8','lengthBytesUTF8']"
       # Export malloc/free for MAIN_THREAD_EM_ASM usage
       "-sEXPORTED_FUNCTIONS=['_main','_malloc','_free']"
+      # Enable native WebAssembly exception handling
+      "-fwasm-exceptions"
       # Debug: enable assertions for better error messages
       "-sASSERTIONS=1"
     )
