@@ -131,7 +131,8 @@
                 <li><kbd>P</kbd> - Open script prompt</li>
             </ul>
             <p style="margin-top: 15px; color: #888; font-size: 12px;">
-                Tip: Use <code>?script=name</code> URL parameter to load different scripts.
+                Tip: Use <code>?script=name</code> to load scripts (e.g., <code>?script=ep2</code>).
+                <br>Advanced: Use <code>?file=/path/to/file.cons</code> for custom paths.
             </p>
         </div>
     </div>
@@ -214,6 +215,34 @@
         }
 
         var Module = {
+            // Parse URL parameters and convert to CLI-style arguments
+            arguments: (function() {
+                const args = [];
+                const urlParams = new URLSearchParams(window.location.search);
+
+                // Map ?script=ep1 to -f /resources/travels/ep1.cons
+                const scriptParam = urlParams.get('script');
+                if (scriptParam) {
+                    args.push('-f');
+                    args.push('/resources/travels/' + scriptParam + '.cons');
+                }
+
+                // Support direct ?file= parameter for advanced users
+                const fileParam = urlParams.get('file');
+                if (fileParam) {
+                    args.push('-f');
+                    args.push(fileParam);
+                }
+
+                // Support ?version flag
+                if (urlParams.has('version')) {
+                    args.push('--version');
+                }
+
+                console.log('Module.arguments:', args);
+                return args;
+            })(),
+
             preRun: [function() {
                 // Set up terminal
                 var terminalDiv = document.getElementById('terminal');

@@ -3,11 +3,7 @@ find_package(spdlog CONFIG)
 find_package(docopt CONFIG)
 find_package(lodepng CONFIG)
 find_package(nlohmann_json CONFIG)
-
-# CLI11 not needed for WASM builds
-if(NOT EMSCRIPTEN)
-  find_package(CLI11 CONFIG)
-endif()
+find_package(CLI11 CONFIG)
 
 add_executable(
   travels
@@ -27,8 +23,10 @@ add_executable(
 
 target_link_libraries(travels PRIVATE travels_options travels_warnings)
 
-# Common libraries (work in both native and WASM)
-set(TRAVELS_COMMON_LIBS
+target_link_system_libraries(
+  travels
+  PRIVATE
+  CLI11::CLI11
   spdlog::spdlog
   lodepng
   nlohmann_json::nlohmann_json
@@ -38,16 +36,9 @@ set(TRAVELS_COMMON_LIBS
   ftxui::dom
   ftxui::component)
 
-# Conditional linking based on build target
+# Apply WASM-specific configuration
 if(EMSCRIPTEN)
-  target_link_system_libraries(travels PRIVATE ${TRAVELS_COMMON_LIBS})
   travels_configure_wasm_target(travels)
-else()
-  target_link_system_libraries(
-    travels
-    PRIVATE
-    CLI11::CLI11
-    ${TRAVELS_COMMON_LIBS})
 endif()
 
 target_include_directories(travels PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
