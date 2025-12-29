@@ -3,14 +3,12 @@
 #include <functional>
 #include <iostream>
 #include <fstream>
-
-#ifndef TRAVELS_WASM_BUILD
 #include <thread>
-#include <CLI/CLI.hpp>
-#endif
 
 #ifdef TRAVELS_WASM_BUILD
 #include <emscripten.h>
+#else
+#include <CLI/CLI.hpp>
 #endif
 
 #include <ftxui/component/component.hpp>// for Slider
@@ -341,11 +339,7 @@ void play_game(Game &game,
     }
   };
 
-#ifdef TRAVELS_WASM_BUILD
-  auto screen = ftxui::ScreenInteractive::FixedSize(80, 50);  // Fullscreen() broken in WASM
-#else
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
-#endif
 
   int counter = 0;
 
@@ -539,9 +533,6 @@ void play_game(Game &game,
   });
 
 
-#ifdef TRAVELS_WASM_BUILD
-  screen.Loop(main_renderer);
-#else
   std::atomic<bool> refresh_ui_continue = true;
 
   // This thread exists to make sure that the event queue has an event to
@@ -558,7 +549,6 @@ void play_game(Game &game,
 
   refresh_ui_continue = false;
   refresh_ui.join();
-#endif
 }
 }// namespace lefticus::travels
 
