@@ -88,19 +88,11 @@ macro(
 
   if(${global})
     message(STATUS "** Setting hardening options globally for all dependencies")
-    # Convert lists to space-separated strings for CMAKE_CXX_FLAGS
-    string(REPLACE ";" " " NEW_COMPILE_OPTIONS_STR "${NEW_COMPILE_OPTIONS}")
-    string(REPLACE ";" " " NEW_LINK_OPTIONS_STR "${NEW_LINK_OPTIONS}")
-    # For definitions, add -D prefix since CMAKE_CXX_FLAGS expects -D flags
-    set(DEF_FLAGS)
-    foreach(def ${NEW_CXX_DEFINITIONS})
-      list(APPEND DEF_FLAGS "-D${def}")
-    endforeach()
-    string(REPLACE ";" " " NEW_CXX_DEFINITIONS_STR "${DEF_FLAGS}")
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NEW_COMPILE_OPTIONS_STR}" )
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${NEW_LINK_OPTIONS_STR}" )
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NEW_CXX_DEFINITIONS_STR}" )
+    # Use add_* commands for true global scope that affects all targets
+    # including those added via FetchContent
+    add_compile_options(${NEW_COMPILE_OPTIONS})
+    add_compile_definitions(${NEW_CXX_DEFINITIONS})
+    add_link_options(${NEW_LINK_OPTIONS})
   else()
     target_compile_options(${target} INTERFACE ${NEW_COMPILE_OPTIONS})
     target_link_options(${target} INTERFACE ${NEW_LINK_OPTIONS})
