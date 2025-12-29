@@ -6,21 +6,28 @@ macro(
   global
   ubsan_minimal_runtime)
 
+  message(STATUS "** DEBUG: travels_enable_hardening called with target='${target}' global='${global}' ubsan='${ubsan_minimal_runtime}'")
   message(STATUS "** Enabling Hardening (Target ${target}) **")
 
+  # Initialize as lists, not strings
+  set(NEW_COMPILE_OPTIONS)
+  set(NEW_LINK_OPTIONS)
+  set(NEW_CXX_DEFINITIONS)
+
   if(MSVC)
-    set(NEW_COMPILE_OPTIONS "${NEW_COMPILE_OPTIONS} /sdl /DYNAMICBASE /guard:cf /NXCOMPAT")
+    list(APPEND NEW_COMPILE_OPTIONS /sdl /DYNAMICBASE /guard:cf /NXCOMPAT)
     message(STATUS "*** MSVC flags: /sdl /DYNAIMCBASE /guard:cf /NXCOMPAT")
 
   elseif(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang|GNU")
-    set(NEW_CXX_DEFINITIONS "${NEW_CXX_DEFINITIONS} -D_GLIBCXX_ASSERTIONS")
+    # target_compile_definitions expects bare names, NOT -D flags!
+    list(APPEND NEW_CXX_DEFINITIONS _GLIBCXX_ASSERTIONS)
     message(STATUS "*** GLIBC++ Assertions (vector[], string[], ...) enabled")
 
     if(NOT
        "${CMAKE_BUILD_TYPE}"
        STREQUAL
        "Debug")
-      set(NEW_COMPILE_OPTIONS "${NEW_COMPILE_OPTIONS} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3")
+      list(APPEND NEW_COMPILE_OPTIONS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3)
       message(STATUS "*** g++/clang _FORTIFY_SOURCE=3 enabled")
     endif()
 
@@ -36,7 +43,7 @@ macro(
 
     check_cxx_compiler_flag(-fstack-protector-strong STACK_PROTECTOR)
     if(STACK_PROTECTOR)
-      set(NEW_COMPILE_OPTIONS "${NEW_COMPILE_OPTIONS} -fstack-protector-strong")
+      list(APPEND NEW_COMPILE_OPTIONS -fstack-protector-strong)
       message(STATUS "*** g++/clang -fstack-protector-strong enabled")
     else()
       message(STATUS "*** g++/clang -fstack-protector-strong NOT enabled (not supported)")
@@ -44,7 +51,7 @@ macro(
 
     check_cxx_compiler_flag(-fcf-protection CF_PROTECTION)
     if(CF_PROTECTION)
-      set(NEW_COMPILE_OPTIONS "${NEW_COMPILE_OPTIONS} -fcf-protection")
+      list(APPEND NEW_COMPILE_OPTIONS -fcf-protection)
       message(STATUS "*** g++/clang -fcf-protection enabled")
     else()
       message(STATUS "*** g++/clang -fcf-protection NOT enabled (not supported)")
@@ -53,7 +60,7 @@ macro(
     check_cxx_compiler_flag(-fstack-clash-protection CLASH_PROTECTION)
     if(CLASH_PROTECTION)
       if(LINUX OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        set(NEW_COMPILE_OPTIONS "${NEW_COMPILE_OPTIONS} -fstack-clash-protection")
+        list(APPEND NEW_COMPILE_OPTIONS -fstack-clash-protection)
         message(STATUS "*** g++/clang -fstack-clash-protection enabled")
       else()
         message(STATUS "*** g++/clang -fstack-clash-protection NOT enabled (clang on non-Linux)")
@@ -67,8 +74,7 @@ macro(
     check_cxx_compiler_flag("-fsanitize=undefined -fno-sanitize-recover=undefined -fsanitize-minimal-runtime"
                             MINIMAL_RUNTIME)
     if(MINIMAL_RUNTIME)
-      set(NEW_COMPILE_OPTIONS
-          "${NEW_COMPILE_OPTIONS} -fsanitize=undefined -fno-sanitize-recover=undefined -fsanitize-minimal-runtime")
+      list(APPEND NEW_COMPILE_OPTIONS -fsanitize=undefined -fno-sanitize-recover=undefined -fsanitize-minimal-runtime)
       message(STATUS "*** ubsan minimal runtime enabled")
     else()
       message(STATUS "*** ubsan minimal runtime NOT enabled (not supported)")
@@ -81,11 +87,24 @@ macro(
   message(STATUS "** Hardening Linker Flags: ${NEW_LINK_OPTIONS}")
   message(STATUS "** Hardening Compiler Defines: ${NEW_CXX_DEFINITIONS}")
 
+  message(STATUS "** DEBUG: Checking global='${global}' evaluates to: ${${global}}")
   if(${global})
     message(STATUS "** Setting hardening options globally for all dependencies")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NEW_COMPILE_OPTIONS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${NEW_LINK_OPTIONS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NEW_CXX_DEFINITIONS}")
+    # Convert lists to space-separated strings for CMAKE_CXX_FLAGS
+    string(REPLACE ";" " " NEW_COMPILE_OPTIONS_STR "${NEW_COMPILE_OPTIONS}")
+    string(REPLACE ";" " " NEW_LINK_OPTIONS_STR "${NEW_LINK_OPTIONS}")
+    # For definitions, add -D prefix since CMAKE_CXX_FLAGS expects -D flags
+    set(DEF_FLAGS)
+    foreach(def ${NEW_CXX_DEFINITIONS})
+      list(APPEND DEF_FLAGS "-D${def}")
+    endforeach()
+    string(REPLACE ";" " " NEW_CXX_DEFINITIONS_STR "${DEF_FLAGS}")
+
+    message(STATUS "** DEBUG: Before - CMAKE_CXX_FLAGS = '${CMAKE_CXX_FLAGS}'")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NEW_COMPILE_OPTIONS_STR}" )
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${NEW_LINK_OPTIONS_STR}" )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NEW_CXX_DEFINITIONS_STR}" )
+    message(STATUS "** DEBUG: After - CMAKE_CXX_FLAGS = '${CMAKE_CXX_FLAGS} ${NEW_COMPILE_OPTIONS_STR} ${NEW_CXX_DEFINITIONS_STR}'")
   else()
     target_compile_options(${target} INTERFACE ${NEW_COMPILE_OPTIONS})
     target_link_options(${target} INTERFACE ${NEW_LINK_OPTIONS})

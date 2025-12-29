@@ -6,6 +6,7 @@ include(CheckCXXCompilerFlag)
 
 macro(travels_setup_options)
   option(travels_ENABLE_HARDENING "Enable hardening" ON)
+  option(travels_ENABLE_GLOBAL_HARDENING "Enable global hardening" ON)
   option(travels_ENABLE_COVERAGE "Enable coverage reporting" OFF)
 
 
@@ -90,10 +91,14 @@ macro(travels_global_options)
     travels_enable_ipo()
   endif()
 
+  message(STATUS "** DEBUG: travels_ENABLE_HARDENING='${travels_ENABLE_HARDENING}' travels_ENABLE_GLOBAL_HARDENING='${travels_ENABLE_GLOBAL_HARDENING}'")
   if(travels_ENABLE_HARDENING AND travels_ENABLE_GLOBAL_HARDENING)
+    message(STATUS "** DEBUG: Calling travels_enable_hardening globally")
     include(cmake/Hardening.cmake)
     set(ENABLE_UBSAN_MINIMAL_RUNTIME NOT travels_ENABLE_SANITIZER_UNDEFINED)
     travels_enable_hardening(travels_options ON ${ENABLE_UBSAN_MINIMAL_RUNTIME})
+  else()
+    message(STATUS "** DEBUG: NOT calling travels_enable_hardening globally")
   endif()
 endmacro()
 
@@ -102,8 +107,8 @@ macro(travels_local_options)
     include(cmake/StandardProjectSettings.cmake)
   endif()
 
-  add_library(travels_warnings INTERFACE)
-  add_library(travels_options INTERFACE)
+  # travels_warnings and travels_options are now created in main CMakeLists.txt
+  # before being used, so we don't create them here
 
   include(cmake/CompilerWarnings.cmake)
   travels_set_project_warnings(

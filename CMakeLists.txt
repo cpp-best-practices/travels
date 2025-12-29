@@ -31,6 +31,10 @@ include(ProjectOptions.cmake)
 
 travels_setup_options()
 
+# Create travels_options and travels_warnings FIRST before they're used
+add_library(travels_warnings INTERFACE)
+add_library(travels_options INTERFACE)
+
 travels_global_options()
 include(Dependencies.cmake)
 travels_setup_dependencies()
