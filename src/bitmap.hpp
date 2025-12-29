@@ -18,7 +18,8 @@ struct Bitmap : ftxui::Node
   void ComputeRequirement() override
   {
     requirement_ = ftxui::Requirement{ .min_x = static_cast<int>(pixels.size().width),
-      .min_y = static_cast<int>(pixels.size().height / 2) };
+      .min_y = static_cast<int>(pixels.size().height / 2),
+      .focused = {}};
   }
 
   void Render(ftxui::Screen &screen) override
