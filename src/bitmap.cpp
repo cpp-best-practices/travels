@@ -1,6 +1,5 @@
 #include <lodepng.h>
 #include <format>
-#include <spdlog/spdlog.h>
 
 #include "bitmap.hpp"
 
@@ -16,7 +15,6 @@ Vector2D<Color> load_png(const std::filesystem::path &filename)
 
   // if there's an error, display it
   if (error != 0) {
-    spdlog::error("lodepng decoder error {}: {} for file {}", error, lodepng_error_text(error), filename.string());
     throw std::runtime_error(std::format("lodepng decoder error {}: {}", error, lodepng_error_text(error)));
   }
 

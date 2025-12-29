@@ -14,7 +14,7 @@
 
 namespace lefticus::travels {
 
-std::filesystem::path find_map_file(const std::filesystem::path &path,
+std::filesystem::path find_resource_file(const std::filesystem::path &path,
   std::span<const std::filesystem::path> search_paths)
 {
   if (path.is_absolute()) {
@@ -47,14 +47,14 @@ Game_3D_Map load_3d_map(const std::filesystem::path &map)
   Game_3D_Map load_3d_map(const std::filesystem::path &map,
   std::span<const std::filesystem::path> search_paths)
   {
-  return load_3d_map(find_map_file(map, search_paths));
+  return load_3d_map(find_resource_file(map, search_paths));
   }
 
 
 
 Game_Map load_tiled_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths)
 {
-  return load_tiled_map(find_map_file(map_json, search_paths));
+  return load_tiled_map(find_resource_file(map_json, search_paths));
 }
 
 
@@ -80,11 +80,6 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
 
   auto load_animations = [](const auto &tileset) {
     std::map<std::size_t, Tile_Set::Animation> result;
-
-    if (!tileset.contains("tiles")) {
-      spdlog::debug("No tiles/animations in tileset");
-      return result;
-    }
 
     for (const auto &tile : tileset["tiles"]) {
       if (!tile.contains("id") || !tile.contains("animation")) {

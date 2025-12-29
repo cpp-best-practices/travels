@@ -19,12 +19,12 @@ template<class... Args> void print(std::format_string<Args...> fmt, Args &&...ar
 
 template<class... Args> void println(std::FILE *stream, std::format_string<Args...> fmt, Args &&...args)
 {
-  print(stream, "{}\n", std::format(fmt, std::forward<Args>(args)...));
+  lefticus::print(stream, "{}\n", std::format(fmt, std::forward<Args>(args)...));
 }
 
 template<class... Args> void println(std::format_string<Args...> fmt, Args &&...args)
 {
-  println(stdout, fmt, std::forward<Args>(args)...);
+  lefticus::println(stdout, fmt, std::forward<Args>(args)...);
 }
 }
 

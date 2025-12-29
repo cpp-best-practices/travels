@@ -405,32 +405,34 @@ void play_game(Game &game,
   auto menu_renderer =
     ftxui::Renderer(current_menu.buttons, [&] { return current_menu.buttons->Render() | ftxui::border; });
 
-  auto popup_renderer = ftxui::Renderer(clear_popup_button, [&] {
-    ftxui::Elements paragraphs;
+  auto popup_renderer = ftxui::Renderer(
+    ftxui::Container::Vertical({ clear_popup_button }),
+    [&] {
+      ftxui::Elements paragraphs;
 
-    std::string paragraph;
-    for (const auto character : game.popup_message) {
-      if (character == '\n') {
-        if (paragraph.empty()) {
-          paragraphs.push_back(ftxui::separatorEmpty());
+      std::string paragraph;
+      for (const auto character : game.popup_message) {
+        if (character == '\n') {
+          if (paragraph.empty()) {
+            paragraphs.push_back(ftxui::separatorEmpty());
+          } else {
+            paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph));
+            paragraph.clear();
+          }
         } else {
-          paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph));
-          paragraph.clear();
+          paragraph.push_back(character);
         }
-      } else {
-        paragraph.push_back(character);
       }
-    }
 
-    if (!paragraph.empty()) { paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph)); }
+      if (!paragraph.empty()) { paragraphs.emplace_back(ftxui::paragraphAlignLeft(paragraph)); }
 
-    paragraphs.push_back(ftxui::separatorEmpty());
+      paragraphs.push_back(ftxui::separatorEmpty());
 
-    paragraphs.push_back(clear_popup_button->Render() | ftxui::center);
+      paragraphs.push_back(clear_popup_button->Render() | ftxui::center);
 
 
-    return ftxui::vbox(paragraphs) | ftxui::border;
-  });
+      return ftxui::vbox(paragraphs) | ftxui::border;
+    });
 
   int selected_log_entry = 0;
   auto log_menu = ftxui::Menu(&log_sink->event_log, &selected_log_entry);
@@ -614,7 +616,7 @@ int main(int argc, const char **argv)
 
     lefticus::travels::play_game(game.game, log_sink, [&game](std::string_view script) { return game.eval(script); });
   } catch (const std::exception &e) {
-    lefticus::print("Unhandled exception in main: {}", e.what());
+    lefticus::println(stderr, "Unhandled exception in main: {}", e.what());
     return EXIT_FAILURE;
   }
 }

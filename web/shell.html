@@ -174,17 +174,14 @@
             console.log('WebGL addon not available, using canvas renderer');
         }
 
-        // Buffers for stdin/stdout/stderr - matching FTXUI's index.mjs approach
+        // Buffers for stdin/stdout/stderr
         var stdin_buffer = [];
         var stdout_buffer = [];
         var stderr_buffer = [];
 
-        // stdin: return next character or null if empty
+        // stdin: return next character or 0 if empty
         function stdin() {
-            if (stdin_buffer.length === 0) {
-                return null;
-            }
-            return stdin_buffer.shift();
+            return stdin_buffer.shift() || 0;
         }
 
         // stdout: buffer bytes, flush on null byte (0) or newline (10)
@@ -260,15 +257,12 @@
 
                 // Capture keyboard input -> stdin buffer
                 term.onData(function(data) {
-                    for (var i = 0; i < data.length; i++) {
-                        stdin_buffer.push(data.charCodeAt(i));
-                    }
-                });
+                    // Filter out Cursor Position Report responses: ESC[<row>;<col>R
+                    // These are terminal responses to queries, not user input
+                    var filtered = data.replace(/\x1b\[[0-9]+;[0-9]+R/g, '');
 
-                // Also capture binary data for special keys
-                term.onBinary(function(data) {
-                    for (var i = 0; i < data.length; i++) {
-                        stdin_buffer.push(data.charCodeAt(i));
+                    for (var i = 0; i < filtered.length; i++) {
+                        stdin_buffer.push(filtered.charCodeAt(i));
                     }
                 });
 
