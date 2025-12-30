@@ -107,13 +107,9 @@ w 2#  #
 )");
 
     Game_3D_Map maze{ lefticus::raycaster::make_map<float>(maze_string), {} };
-    maze.enter_actions.emplace('w', [](Game &game, char) {
-      game.teleport_to_2d("main", "maze_left_exit");
-    });
+    maze.enter_actions.emplace('w', [](Game &game, char) { game.teleport_to_2d("main", "maze_left_exit"); });
 
-    maze.enter_actions.emplace('e', [](Game &game, char) {
-      game.teleport_to_2d("main", "maze_right_exit");
-    });
+    maze.enter_actions.emplace('e', [](Game &game, char) { game.teleport_to_2d("main", "maze_right_exit"); });
 
     return maze;
   };

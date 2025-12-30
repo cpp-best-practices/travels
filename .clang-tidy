@@ -7,6 +7,7 @@ Checks: "*,
         -google-*,
         -llvm*,
         -modernize-use-trailing-return-type,
+        -performance-enum-size,
         -zircon-*,
         -readability-else-after-return,
         -readability-static-accessed-through-instance,
@@ -15,11 +16,13 @@ Checks: "*,
         -misc-non-private-member-variables-in-classes,
 "
 WarningsAsErrors: ''
-HeaderFilterRegex: ''
+HeaderFilterRegex: '(src|include)/.*'
 FormatStyle:     none
 
 
-
+CheckOptions:
+  - key: readability-identifier-naming.IgnoredRegexp
+    value: '^(x|y|z|fd|id)$'
 
 
 

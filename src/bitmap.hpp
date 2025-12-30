@@ -19,7 +19,7 @@ struct Bitmap : ftxui::Node
   {
     requirement_ = ftxui::Requirement{ .min_x = static_cast<int>(pixels.size().width),
       .min_y = static_cast<int>(pixels.size().height / 2),
-      .selected_box{ 0, 0, 0, 0 } };
+      .focused = {}};
   }
 
   void Render(ftxui::Screen &screen) override
@@ -47,7 +47,8 @@ struct Bitmap : ftxui::Node
   void draw(std::pair<std::size_t, std::size_t> location, std::tuple<std::uint8_t, std::uint8_t, std::uint8_t> color)
   {
     if (location.first < pixels.size().width && location.second < pixels.size().height) {
-      pixels.at({location.first, location.second}) = Color{ std::get<0>(color), std::get<1>(color), std::get<2>(color) };
+      pixels.at({ location.first, location.second }) =
+        Color{ std::get<0>(color), std::get<1>(color), std::get<2>(color) };
     }
   }
 

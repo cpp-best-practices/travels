@@ -1,9 +1,16 @@
 #include <array>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iostream>
+#include <thread>
 
 #include <CLI/CLI.hpp>
+
+#ifdef TRAVELS_WASM_BUILD
+#include <emscripten.h>
+#endif
+
 #include <ftxui/component/component.hpp>// for Slider
 #include <ftxui/component/screen_interactive.hpp>// for ScreenInteractive
 
@@ -139,7 +146,8 @@ struct Displayed_Menu
 
     for (const auto &item : menu.items) {
       if (!item.visible || item.visible(game)) {
-        menu_lines.push_back(ftxui::Button(item.text, [&game, &item]() { item.action(game); }, Animated()));
+        menu_lines.push_back(ftxui::Button(
+          item.text, [&game, &item]() { item.action(game); }, Animated()));
       }
     }
 
@@ -398,7 +406,7 @@ void play_game(Game &game,
   auto menu_renderer =
     ftxui::Renderer(current_menu.buttons, [&] { return current_menu.buttons->Render() | ftxui::border; });
 
-  auto popup_renderer = ftxui::Renderer(clear_popup_button, [&] {
+  auto popup_renderer = ftxui::Renderer(ftxui::Container::Vertical({ clear_popup_button }), [&] {
     ftxui::Elements paragraphs;
 
     std::string paragraph;
@@ -439,11 +447,9 @@ void play_game(Game &game,
   int selected_script_log = 0;
   ftxui::MenuOption script_log_menu_options;
   ftxui::MenuEntryOption script_log_menu_entry_options;
-  script_log_menu_entry_options.transform=[](const ftxui::EntryState &state) {
+  script_log_menu_entry_options.transform = [](const ftxui::EntryState &state) {
     ftxui::Element e = ftxui::text(state.label);
-    if (state.active && state.focused) {
-      e = e | ftxui::inverted;
-    }
+    if (state.active && state.focused) { e = e | ftxui::inverted; }
     return e;
   };
   script_log_menu_options.entries_option = script_log_menu_entry_options;
@@ -548,6 +554,9 @@ void play_game(Game &game,
 
 std::vector<std::filesystem::path> resource_search_directories()
 {
+#ifdef TRAVELS_WASM_BUILD
+  return { "/resources" };// Embedded via --embed-file
+#else
   std::vector<std::filesystem::path> results;
 
   auto current_path = std::filesystem::current_path();
@@ -562,6 +571,7 @@ std::vector<std::filesystem::path> resource_search_directories()
   results.push_back(std::filesystem::path(travels::cmake::source_dir) / "resources");
 
   return results;
+#endif
 }
 
 int main(int argc, const char **argv)
@@ -571,8 +581,9 @@ int main(int argc, const char **argv)
 
     bool show_version = false;
     app.add_flag("--version", show_version, "Show version information");
-    std::filesystem::path filename{};
-    app.add_option("-f,--file", filename, "cons_expr game script to execute")->required();
+
+    std::filesystem::path filename{ "travels/ep1.cons" };
+    app.add_option("-f,--file", filename, "cons_expr game script to execute");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -581,25 +592,26 @@ int main(int argc, const char **argv)
       return EXIT_SUCCESS;
     }
 
+    // Set up custom log sink BEFORE game initialization
+    auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
     spdlog::set_level(spdlog::level::trace);
+    spdlog::info("Loading script: {}", filename.string());
 
     Scripted_Game game{ resource_search_directories() };
 
     game.eval([&]() {
-      std::ifstream in(filename);
+      std::ifstream in(lefticus::travels::find_resource_file(filename, resource_search_directories()));
+      if (!in.good()) { throw std::runtime_error("Failed to load script: " + filename.string()); }
       std::ostringstream sstr;
       sstr << in.rdbuf();
       return sstr.str();
     }());
 
-    // we want to take over as the main spdlog sink
-    auto log_sink = std::make_shared<lefticus::travels::log_sink<std::mutex>>();
 
-    spdlog::set_default_logger(std::make_shared<spdlog::logger>("default", log_sink));
-
-    spdlog::set_level(spdlog::level::trace);
     lefticus::travels::play_game(game.game, log_sink, [&game](std::string_view script) { return game.eval(script); });
   } catch (const std::exception &e) {
-    lefticus::print("Unhandled exception in main: {}", e.what());
+    lefticus::println(stderr, "Unhandled exception in main: {}", e.what());
+    return EXIT_FAILURE;
   }
 }

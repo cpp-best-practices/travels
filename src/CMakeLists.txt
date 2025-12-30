@@ -5,7 +5,6 @@ find_package(lodepng CONFIG)
 find_package(nlohmann_json CONFIG)
 find_package(CLI11 CONFIG)
 
-# Generic test that uses conan libs
 add_executable(
   travels
   main.cpp
@@ -20,7 +19,7 @@ add_executable(
   game_components.hpp
   tile_set.hpp
   game_components.cpp
-        scripted_game.hpp)
+  scripted_game.hpp)
 
 target_link_libraries(travels PRIVATE travels_options travels_warnings)
 
@@ -36,5 +35,10 @@ target_link_system_libraries(
   ftxui::screen
   ftxui::dom
   ftxui::component)
+
+# Apply WASM-specific configuration
+if(EMSCRIPTEN)
+  travels_configure_wasm_target(travels)
+endif()
 
 target_include_directories(travels PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")

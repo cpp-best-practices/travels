@@ -21,10 +21,7 @@ struct Scripted_Game
     game.maps_3d.emplace(std::string(engine.strings.view(name)),
       lefticus::travels::load_3d_map(engine.strings.view(path), m_search_paths));
   }
-  void show_popup(engine_type::string_type name)
-  {
-    game.popup_message = std::string(engine.strings.view(name));
-  }
+  void show_popup(engine_type::string_type name) { game.popup_message = std::string(engine.strings.view(name)); }
 
   void set_menu(engine_type::list_type list)
   {

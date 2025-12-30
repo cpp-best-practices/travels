@@ -63,6 +63,9 @@ struct Game_Map
   }
 };
 
+std::filesystem::path find_resource_file(const std::filesystem::path &path,
+  std::span<const std::filesystem::path> search_paths);
+
 Game_Map load_tiled_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths);
 Game_Map load_tiled_map(const std::filesystem::path &map_json);
 

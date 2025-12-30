@@ -6,18 +6,22 @@ include(CheckCXXCompilerFlag)
 
 macro(travels_setup_options)
   option(travels_ENABLE_HARDENING "Enable hardening" ON)
+  option(travels_ENABLE_GLOBAL_HARDENING "Enable global hardening" ON)
   option(travels_ENABLE_COVERAGE "Enable coverage reporting" OFF)
 
 
-  if((CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*" OR CMAKE_CXX_COMPILER_ID MATCHES ".*GNU.*") AND NOT WIN32)
-    set(SUPPORTS_UBSAN ON)
-  else()
+  # Emscripten doesn't support sanitizers
+  if(EMSCRIPTEN)
     set(SUPPORTS_UBSAN OFF)
-  endif()
-
-  if((CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*" OR CMAKE_CXX_COMPILER_ID MATCHES ".*GNU.*") AND WIN32)
+    set(SUPPORTS_ASAN OFF)
+  elseif((CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*" OR CMAKE_CXX_COMPILER_ID MATCHES ".*GNU.*") AND NOT WIN32)
+    set(SUPPORTS_UBSAN ON)
+    set(SUPPORTS_ASAN ON)
+  elseif((CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*" OR CMAKE_CXX_COMPILER_ID MATCHES ".*GNU.*") AND WIN32)
+    set(SUPPORTS_UBSAN OFF)
     set(SUPPORTS_ASAN OFF)
   else()
+    set(SUPPORTS_UBSAN OFF)
     set(SUPPORTS_ASAN ON)
   endif()
 
@@ -99,8 +103,8 @@ macro(travels_local_options)
     include(cmake/StandardProjectSettings.cmake)
   endif()
 
-  add_library(travels_warnings INTERFACE)
-  add_library(travels_options INTERFACE)
+  # travels_warnings and travels_options are now created in main CMakeLists.txt
+  # before being used, so we don't create them here
 
   include(cmake/CompilerWarnings.cmake)
   travels_set_project_warnings(
@@ -111,19 +115,22 @@ macro(travels_local_options)
     ""
     "")
 
-  if(travels_ENABLE_USER_LINKER)
-    include(cmake/Linker.cmake)
-    configure_linker(travels_options)
-  endif()
+  # Linker and sanitizers not supported in Emscripten
+  if(NOT EMSCRIPTEN)
+    if(travels_ENABLE_USER_LINKER)
+      include(cmake/Linker.cmake)
+      configure_linker(travels_options)
+    endif()
 
-  include(cmake/Sanitizers.cmake)
-  travels_enable_sanitizers(
-    travels_options
-    ${travels_ENABLE_SANITIZER_ADDRESS}
-    ${travels_ENABLE_SANITIZER_LEAK}
-    ${travels_ENABLE_SANITIZER_UNDEFINED}
-    ${travels_ENABLE_SANITIZER_THREAD}
-    ${travels_ENABLE_SANITIZER_MEMORY})
+    include(cmake/Sanitizers.cmake)
+    travels_enable_sanitizers(
+      travels_options
+      ${travels_ENABLE_SANITIZER_ADDRESS}
+      ${travels_ENABLE_SANITIZER_LEAK}
+      ${travels_ENABLE_SANITIZER_UNDEFINED}
+      ${travels_ENABLE_SANITIZER_THREAD}
+      ${travels_ENABLE_SANITIZER_MEMORY})
+  endif()
 
   set_target_properties(travels_options PROPERTIES UNITY_BUILD ${travels_ENABLE_UNITY_BUILD})
 

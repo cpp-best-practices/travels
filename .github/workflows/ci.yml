@@ -11,7 +11,7 @@ on:
       - develop
 
 env:
-  CLANG_TIDY_VERSION: "15.0.2"
+  CLANG_TIDY_VERSION: "20.1.0"
   VERBOSE: 1
 
 jobs:
@@ -29,13 +29,13 @@ jobs:
       # and your own projects needs
       matrix:
         os:
-          - ubuntu-20.04
-          - macos-10.15
-          - windows-2019
+          - ubuntu-24.04
+          - macos-15
+          - windows-2025
         compiler:
-          # you can specify the version after `-` like "llvm-15.0.2".
-          - llvm-15.0.2
-          - gcc-11
+          # you can specify the version after `-` like "llvm-20.1.0".
+          - llvm-20.1.0
+          - gcc-15
         generator:
           - "Ninja Multi-Config"
         build_type:
@@ -49,26 +49,26 @@ jobs:
 
         exclude:
           # mingw is determined by this author to be too buggy to support
-          - os: windows-2019
-            compiler: gcc-11
+          - os: windows-2025
+            compiler: gcc-15
 
         include:
           # Add appropriate variables for gcov version required. This will intentionally break
           # if you try to use a compiler that does not have gcov set
-          - compiler: gcc-11
+          - compiler: gcc-15
             gcov_executable: gcov
             enable_ipo: On
 
-          - compiler: llvm-15.0.2
+          - compiler: llvm-20.1.0
             enable_ipo: Off
             gcov_executable: "llvm-cov gcov"
 
-          - os: macos-10.15
+          - os: macos-15
             enable_ipo: Off
             enable_cppcheck: OFF
             enable_clang_tidy: OFF
 
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04
             enable_clang_tidy: On
             enable_cppcheck: On
 
@@ -79,8 +79,8 @@ jobs:
             package_generator: TBZ2
 
           # This exists solely to make sure a non-multiconfig build works
-          - os: ubuntu-20.04
-            compiler: gcc-11
+          - os: ubuntu-24.04
+            compiler: gcc-15
             generator: "Unix Makefiles"
             build_type: Debug
             gcov_executable: gcov
@@ -91,7 +91,7 @@ jobs:
 
 
           # Windows msvc builds
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Debug
@@ -101,7 +101,7 @@ jobs:
             enable_cppcheck: Off
 
 
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Release
@@ -111,7 +111,7 @@ jobs:
             enable_cppcheck: Off
 
 
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Debug
@@ -120,7 +120,7 @@ jobs:
             enable_cppcheck: Off
 
 
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Release
@@ -130,7 +130,7 @@ jobs:
             enable_cppcheck: Off
 
 
-          - os: windows-2022
+          - os: windows-2025
             compiler: msvc
             generator: "Visual Studio 17 2022"
             build_type: Release
@@ -145,12 +145,12 @@ jobs:
     steps:
       - name: Check for llvm version mismatches
         if: ${{ contains(matrix.compiler, 'llvm') && !contains(matrix.compiler, env.CLANG_TIDY_VERSION) }}
-        uses: actions/github-script@v3
+        uses: actions/github-script@v7
         with:
           script: |
             core.setFailed('There is a mismatch between configured llvm compiler and clang-tidy version chosen')
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Cache
         uses: ./.github/actions/setup_cache
@@ -226,7 +226,7 @@ jobs:
 
 
       - name: Publish to codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
           flags: ${{ runner.os }}
           name: ${{ runner.os }}-coverage

@@ -14,7 +14,7 @@
 
 namespace lefticus::travels {
 
-std::filesystem::path find_map_file(const std::filesystem::path &path,
+std::filesystem::path find_resource_file(const std::filesystem::path &path,
   std::span<const std::filesystem::path> search_paths)
 {
   if (path.is_absolute()) {
@@ -31,7 +31,7 @@ std::filesystem::path find_map_file(const std::filesystem::path &path,
   throw std::runtime_error(std::format("Unable to find map in any search path: {}", path.string()));
 }
 
-Game_3D_Map load_3d_map(const std::filesystem::path &map)
+Game_3D_Map load_3d_map(const std::filesystem::path &map_json)
 {
   auto load_file = [](const auto &path) -> std::string {
     std::ifstream in(path);
@@ -40,21 +40,19 @@ Game_3D_Map load_3d_map(const std::filesystem::path &map)
     return sstr.str();
   };
 
-  return Game_3D_Map{ lefticus::raycaster::make_map<float>(load_file(map)), {} };
+  return Game_3D_Map{ lefticus::raycaster::make_map<float>(load_file(map_json)), {} };
 }
 
 
-  Game_3D_Map load_3d_map(const std::filesystem::path &map,
-  std::span<const std::filesystem::path> search_paths)
-  {
-  return load_3d_map(find_map_file(map, search_paths));
-  }
-
+Game_3D_Map load_3d_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths)
+{
+  return load_3d_map(find_resource_file(map_json, search_paths));
+}
 
 
 Game_Map load_tiled_map(const std::filesystem::path &map_json, std::span<const std::filesystem::path> search_paths)
 {
-  return load_tiled_map(find_map_file(map_json, search_paths));
+  return load_tiled_map(find_resource_file(map_json, search_paths));
 }
 
 
@@ -82,6 +80,10 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
     std::map<std::size_t, Tile_Set::Animation> result;
 
     for (const auto &tile : tileset["tiles"]) {
+      if (!tile.contains("id") || !tile.contains("animation")) {
+        continue;// Skip tiles without animation data
+      }
+
       const std::size_t id = tile["id"];
 
       Tile_Set::Animation animation;
@@ -89,12 +91,10 @@ Game_Map load_tiled_map(const std::filesystem::path &map_json)// NOLINT cognitiv
       for (const auto &frame : tile["animation"]) {
         const std::size_t duration = frame["duration"];
         const std::size_t tile_id = frame["tileid"];
-        animation.frames.emplace_back(std::chrono::milliseconds{duration}, tile_id);
+        animation.frames.emplace_back(std::chrono::milliseconds{ duration }, tile_id);
       }
 
-      if (!animation.frames.empty()) {
-        result[id] = animation;
-      }
+      if (!animation.frames.empty()) { result[id] = animation; }
     }
 
     spdlog::debug("Loaded {} animations", result.size());
