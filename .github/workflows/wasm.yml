@@ -1,6 +1,9 @@
-name: Deploy to GitHub Pages
+name: Build WASM and Deploy to GitHub Pages
 
 on:
+  pull_request:
+  release:
+    types: [published]
   push:
     branches: [main, develop]
     tags: ['**']
@@ -39,6 +42,7 @@ jobs:
 
       - name: Determine deploy path
         id: deploy-path
+        if: github.event_name != 'pull_request' && github.event_name != 'release'
         run: |
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "path=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
@@ -49,6 +53,7 @@ jobs:
           fi
 
       - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request' && github.event_name != 'release'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
