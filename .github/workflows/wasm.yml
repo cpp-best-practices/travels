@@ -37,7 +37,6 @@ jobs:
           cp build/src/travels.html dist/index.html
           cp build/src/travels.js dist/
           cp build/src/travels.wasm dist/
-          cp build/src/travels.worker.js dist/
           cp build/src/coi-serviceworker.min.js dist/
 
       - name: Determine deploy path
